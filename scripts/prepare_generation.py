@@ -19,8 +19,6 @@ def parseArgs(argv):
     return parser.parse_args(argv)
 
 
-
-
 #TODO: check dataset loader class
 filename_path = '/data/freq_bias_benchmark/data/train/filename/'
 text_dir = '/data/Machine_CDI/Lexical-benchmark_data/train_phoneme/dataset/'
@@ -28,8 +26,13 @@ out_dir = '/data/freq_bias_benchmark/data/train/train_utt/'
 generation_path = '/data/freq_bias_benchmark/data/generation/generated/generation_old.csv'
 utt_path = out_dir
 month_dict = {'400':[4,8],'800':[9,18],'1600':[19,28],'3200':[29,36],'4500':[46,54],'7100':[66,74]}
-chunk = '400'
 temp_lst = ['0.3','0.6','1.0','1.5']
+
+
+
+
+
+
 def get_train(filename_path:str, text_dir:str,out_dir:str,chunk:str):
 
     """
@@ -121,6 +124,12 @@ def match_generation(utt_path:str,generation_path:str,chunk:str,month_dict:dict
     unmatched_frame.to_csv('/'.join(generation_path.split('/')[:-2]) + '/' + chunk + '.csv')
     return matched_frame, rest_gen, unmatched_frame
 
+
+
+
+
+
+#TODO: truncate and make use of existing trnascripts
 
 def main(argv):
     # Args parser
