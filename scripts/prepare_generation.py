@@ -7,7 +7,7 @@ prepare generation data
 
 import pandas as pd
 
-
+#TODO: add dataloader for the project
 train_path =
 
 def match_generation(train_path:str):
