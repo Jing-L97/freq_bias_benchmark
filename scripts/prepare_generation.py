@@ -7,7 +7,6 @@ prepare generation data
 import argparse
 import os
 import pandas as pd
-
 import sys
 from tqdm import tqdm
 from lm_benchmark.datasets.parsing_utils.train_parser import clean_text
@@ -24,13 +23,11 @@ filename_path = '/data/freq_bias_benchmark/data/train/filename/'
 text_dir = '/data/Machine_CDI/Lexical-benchmark_data/train_phoneme/dataset/'
 out_dir = '/data/freq_bias_benchmark/data/train/train_utt/'
 generation_path = '/data/freq_bias_benchmark/data/generation/generated/generation_old.csv'
-utt_path = out_dir
+
 month_dict = {'400':[4,8],'800':[9,18],'1600':[19,28],'3200':[29,36],'4500':[46,54],'7100':[66,74]}
 temp_lst = ['0.3','0.6','1.0','1.5']
-
-
-
-
+utt_path = '/data/freq_bias_benchmark/data/generation/'
+model_lst = ['800','1600','3200','4500','7100']
 
 
 def get_train(filename_path:str, text_dir:str,out_dir:str,chunk:str):
@@ -124,12 +121,46 @@ def match_generation(utt_path:str,generation_path:str,chunk:str,month_dict:dict
     unmatched_frame.to_csv('/'.join(generation_path.split('/')[:-2]) + '/' + chunk + '.csv')
     return matched_frame, rest_gen, unmatched_frame
 
+def segment_generation(utt_path, model_lst, n):
+        '''
+        segment generation into n subdataframes
+        input:
+            utt_path: path to the train utt .csv
+            n: # subdataframe to be segmented
+            model_lst: the list of model generation to be segmented
+        Returns
+        -------
+            train: .csv train\num_token\generation(prompt_temp)
+        '''
 
+        def segment_dataframe(df, n):
+            num_rows = len(df)
+            segment_size = num_rows // n
+            remainder = num_rows % n
+            segments = []
+            start = 0
+            for i in range(n):
+                if i < remainder:
+                    end = start + segment_size + 1
+                else:
+                    end = start + segment_size
+                segments.append(df.iloc[start:end])
+                start = end
+            return segments
 
+        for model in tqdm(model_lst):
+            script = pd.read_csv(utt_path + model + '.csv')
+            # Segment the DataFrame
+            sub_dataframes = segment_dataframe(script, n)
+            n = 0
+            for _, sub_df in enumerate(sub_dataframes):
+                # save the result
+                out_dir = utt_path + 'prompt/' + model + '/'
+                if not os.path.exists(out_dir):
+                    os.makedirs(out_dir)
+                sub_df.to_csv(out_dir + str(n) + '.csv')
+                n += 1
 
-
-
-#TODO: truncate and make use of existing trnascripts
 
 def main(argv):
     # Args parser

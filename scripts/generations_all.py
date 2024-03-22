@@ -6,6 +6,7 @@ import argparse
 
 '''
 generate results iteratively
+segment current frame into 10 subframes to save time
 '''
 
 def parseArgs(argv):

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 autoregressive LM generation
+-> segment into subfiles to avoid losing files
 @author: jliu
 """
 import numpy as np
@@ -291,6 +292,7 @@ def main(argv):
     print("Loading prompt data from {}...".format(DataPath))
 
     prompt = pd.read_csv(DataPath)
+
     # loop over decoding parameters and temperatures
     for decoding_para in tqdm(sample_lst):
         for temp in tqdm(temp_lst):
