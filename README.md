@@ -1,8 +1,7 @@
 # Freq bias benchmark
 
 A proposed benchmark to evaluate langauge model's generation of long-tail knowledge
-You could add many tools to this template (use [Typer](https://typer.tiangolo.com/)
-for your CLI, [pre-commit](https://pre-commit.com/) hooks, [pylint](https://pylint.pycqa.org), etc.).
+
 
 ## Installation
 
@@ -16,8 +15,7 @@ pip install .
 ```
 
 
-## Data preparation 
-
+## Data preparation
 segment utterances in train data for generation
 
 ```bash
@@ -29,7 +27,12 @@ python prepare_generation.py
 LSTM: next token prediction, adapted from [Lexical-benchmark](https://github.com/Jing-L97/Lexical-benchmark)
 
 ## Results analysis
+
+### gather descriptive freq in train and genration set
+```bash
+python compare_freq.py
+```
+
 ### oov analysis
 
 
-### freq proportion analysis
