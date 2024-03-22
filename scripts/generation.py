@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 autoregressive LM generation
--> segment into subfiles to avoid losing files
 @author: jliu
 """
 import numpy as np
 import os
 import pandas as pd
 import sys
-from lm_benchmark.generation_util import *
+from generation_util import *
 from tqdm import tqdm
 
 
@@ -38,7 +37,7 @@ def parseArgs(argv):
     parser.add_argument('--sample_lst', default = '1',
                         help='a list of top-k or top_p or beam candidates')
     
-    parser.add_argument('--temp_lst', default = '0.3,1.5',
+    parser.add_argument('--temp_lst', default = '0.3,0.6,1.0,1.5',
                         help='a list of temperature parameters for optimization')
     
     parser.add_argument('--gpu', type=str, default = 'True',
@@ -268,7 +267,7 @@ def main(argv):
 
     # this is for model path
     DataPath = args.DataPath
-    OutputPath_temp = args.OutputPath
+    OutputPath = args.OutputPath
     mode = args.mode
     prompt_mode = args.prompt_mode
     
@@ -283,7 +282,7 @@ def main(argv):
     boundary_lst = args.boundary_lst
     # filter the unwanted token dictionary
     target_tokens = args.target_tokens
-    OutputPath = OutputPath_temp + '/' + prompt_mode +'/'  + mode
+    #OutputPath = OutputPath_temp + '/' + prompt_mode +'/'  + mode
     # create a directory if there's no such path
     if not os.path.exists(OutputPath):
         os.makedirs(OutputPath)
@@ -292,7 +291,6 @@ def main(argv):
     print("Loading prompt data from {}...".format(DataPath))
 
     prompt = pd.read_csv(DataPath)
-
     # loop over decoding parameters and temperatures
     for decoding_para in tqdm(sample_lst):
         for temp in tqdm(temp_lst):
@@ -338,8 +336,11 @@ def main(argv):
             prompt['LSTM_generated'] = generated_lst
             prompt['LSTM_segmented'] = segmented_lst
             prompt_cleaned = prompt[(prompt['LSTM_generated' ] != 'NA')]
-            # save the file in file inthe naming convention: topk_temp_generated.csv
-            prompt_cleaned.to_csv(OutputPath + '/' + str(temp) + '.csv',escapechar='?')
+            # save the file with the naming convention: temp/n.csv
+            out_dir = OutputPath + '/' + str(temp) + '/'
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+            prompt_cleaned.to_csv(out_dir + DataPath.split('/')[-1],escapechar='?')
             print('Finished generation with {}: {} and with temperature: {}'.format(mode,decoding_para,temp))
                 
     print("Finished generation!")

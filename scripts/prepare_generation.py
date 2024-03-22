@@ -26,7 +26,7 @@ generation_path = '/data/freq_bias_benchmark/data/generation/generated/generatio
 
 month_dict = {'400':[4,8],'800':[9,18],'1600':[19,28],'3200':[29,36],'4500':[46,54],'7100':[66,74]}
 temp_lst = ['0.3','0.6','1.0','1.5']
-utt_path = '/data/freq_bias_benchmark/data/generation/'
+utt_path = '/data/freq_bias_benchmark/data/train/train_utt/'
 model_lst = ['800','1600','3200','4500','7100']
 
 
