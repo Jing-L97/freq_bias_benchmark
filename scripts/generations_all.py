@@ -17,7 +17,7 @@ def parseArgs(argv):
     parser.add_argument('--data_path', type=str, default = '/scratch2/jliu/freq_bias_benchmark/data/generation/unprompted/sample_random/prompt',
                         help='reference transcript path')
     parser.add_argument('--out_path', type=str, default='/scratch2/jliu/freq_bias_benchmark/data/generation/unprompted/sample_random/generated/new',
-                        help='dict root path')
+                        help='output path')
     parser.add_argument('--gpu', type=bool, default = False,
                         help= 'whether to use gpu')
     parser.add_argument('--hour',  default = '800h',
@@ -36,12 +36,13 @@ def main(argv):
     root_path = args.root_path
     dict_path = args.dict_path
     hours = args.hour
-    
+    data_path = args.data_path
+
     for chunk in os.listdir(root_path + '/' + hours):
             if os.path.exists(root_path + '/' + hours + '/' + chunk + '/checkpoints/checkpoint_best.pt'):
                 if os.path.exists(dict_path + '/' + hours + '/' + chunk + '/bin_with/dict.txt'):
                     # loop over the folder
-                    for file in os.listdir(root_path + '/' + hours):
+                    for file in os.listdir(data_path + '/' + hours):
                         generation_command = 'python generation.py --ModelPath /home/jliu/STELAWord/models/char_with/{hours_var}/{chunk_var} \
                               --DictPath /home/jliu/STELAWord/data/preprocessed/EN/{hours_var}/{chunk_var}/bin_with \
                               --DataPath {data_path_var}/{hours_name}/{file_name}\

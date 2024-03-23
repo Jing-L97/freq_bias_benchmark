@@ -11,7 +11,7 @@ from lm_benchmark.compare_util import get_freq_table
 """
 analyze the generated tokens
 """
-
+new_path = '/data/freq_bias_benchmark/data/generation/generated/new/400h/02/unprompted/sample_random/'
 def merge_gen():
     """merge old and new generations"""
 
