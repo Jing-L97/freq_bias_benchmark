@@ -47,24 +47,28 @@ def eval_freq(train_freq, gen_freq):
             return 0
         elif gen_freq < train_freq:
             return -1
+
+file = 'unprompted_0.3_400.csv'
+
 def match_freq(gen_path:str):
     '''
     map exp and filter freq: loop over the generated tokens
     input: path to train adn gen freq
     return updated gen csv
     '''
-    frame = pd.DataFrame()
+
     train_freq = pd.read_csv(gen_path + 'train_' + gen_path.split('/')[-2] + '.csv')   # load train freq
     # go over the train and gen freq df
     for file in tqdm(os.listdir(gen_path)):
         if not file.startswith('train'):
             gen_freq = pd.read_csv(gen_path + file)
             # match the freq info
+            frame = pd.DataFrame()
             n = 0
             while n < gen_freq.shape[0]:
                 gen_row = gen_freq.iloc[[n]]
                 try:
-                    selected_row = train_freq[train_freq['Word'] == gen_row['Word'].tolist()[n]]
+                    selected_row = train_freq[train_freq['Word'] == gen_row['Word'].item()]
                     for header in ['Freq', 'Norm_freq', 'Norm_freq_per_million', 'Log_freq', 'Log_norm_freq_per_million']:
                         gen_row['train_' + header] = selected_row[header].item()
                 except:
@@ -83,59 +87,10 @@ def match_freq(gen_path:str):
 
 
 gen_path = '/data/freq_bias_benchmark/data/generation/gen_freq/400/'
-compare_freq(gen_path)
+match_freq(gen_path)
 
 
 """
 plot the results for the generatred tokens
 """
-
-
-def plot_multiple(out_path, temp_lst, model_type):
-    for temp in temp_lst:
-        frame = pd.read_csv(out_path + str(temp) + '.csv')
-        # remove oov
-        stat_frame = frame[frame['model'] == model_type]
-        gen_lst = stat_frame['gen_Log_norm_freq_per_million'].tolist()
-        train_lst = stat_frame['train_Log_norm_freq_per_million'].tolist()
-        # plt.scatter(train_lst, gen_lst, label=str(temp))
-        # fit log
-        try:
-            fit_log(train_lst, gen_lst, label=str(temp), color='Red')
-        except:
-            print(str(model_type) + '_' + str(temp))
-
-        plt.xlabel('log freq per million in train set', fontsize=15)
-        plt.ylabel('log freq per million in generation set', fontsize=15)
-        plt.title('Model trained on {} hour audiobook'.format(model_type), fontsize=15, fontweight='bold')
-        plt.xlim(-1, 6)
-        plt.ylim(-1, 6)
-        plt.legend()
-        # plt.show()
-
-
-def plot_single(out_path, temp_lst, model_lst):
-    for model_type in model_lst:
-        for temp in temp_lst:
-            frame = pd.read_csv(out_path + str(temp) + '.csv')
-            frame = frame[frame['train_Freq'] != 0]
-            # remove oov
-            stat_frame = frame[frame['model'] == model_type]
-            gen_lst = stat_frame['gen_Log_norm_freq_per_million'].tolist()
-            train_lst = stat_frame['train_Log_norm_freq_per_million'].tolist()
-            plt.scatter(train_lst, gen_lst, label=str(temp))
-            '''
-            try:
-                fit_log(train_lst, gen_lst, label=str(temp), color = 'Red')
-            except:
-                print(str(model_type) + '_' + str(temp))
-            '''
-            # fit the log curve with error bars
-            plt.xlabel('log freq per million in train set', fontsize=15)
-            plt.ylabel('log freq per million in generation set', fontsize=15)
-            plt.title('Model trained on {} hour audiobook'.format(model_type), fontsize=15, fontweight='bold')
-            plt.xlim(-1, 6)
-            plt.ylim(-1, 6)
-            # plt.legend()
-            plt.show()
 
