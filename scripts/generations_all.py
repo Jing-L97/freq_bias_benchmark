@@ -20,9 +20,10 @@ def parseArgs(argv):
                         help='output path')
     parser.add_argument('--gpu', type=bool, default = False,
                         help= 'whether to use gpu')
+    parser.add_argument('--temp_lst', default='0.3,0.6,1.0,1.5',
+                        help='whether to use gpu')
     parser.add_argument('--hour',  default = '800h',
                         help= 'whether to use gpu')
-
     return parser.parse_args(argv)
 
 def run_command(command):
@@ -43,13 +44,16 @@ def main(argv):
                 if os.path.exists(dict_path + '/' + hours + '/' + chunk + '/bin_with/dict.txt'):
                     # loop over the folder
                     for file in os.listdir(data_path + '/' + hours):
-                        generation_command = 'python generation.py --ModelPath /home/jliu/STELAWord/models/char_with/{hours_var}/{chunk_var} \
-                              --DictPath /home/jliu/STELAWord/data/preprocessed/EN/{hours_var}/{chunk_var}/bin_with \
-                              --DataPath {data_path_var}/{hours_name}/{file_name}\
-                              --OutputPath {out_path_var}/{hours_var}/{chunk_var} \
-                               --gpu {gpu_var}'.format(hours_var=hours,hours_name=hours[:-1],chunk_var=chunk, data_path_var = args.data_path
-                              ,gpu_var=args.gpu,out_path_var=args.out_path,file_name=file)
-                    run_command(generation_command)
+                        # check whether the segmented fataframe has been generated
+                        out_dir = args.out_path + '/' + hours + '/' + chunk + '0.3/' + file
+                        if not os.path.exists(out_dir):
+                            generation_command = 'python generation.py --ModelPath /home/jliu/STELAWord/models/char_with/{hours_var}/{chunk_var} \
+                                  --DictPath /home/jliu/STELAWord/data/preprocessed/EN/{hours_var}/{chunk_var}/bin_with \
+                                  --DataPath {data_path_var}/{hours_name}/{file_name}\
+                                  --OutputPath {out_path_var}/{hours_var}/{chunk_var} \
+                                   --gpu {gpu_var}'.format(hours_var=hours,hours_name=hours[:-1],chunk_var=chunk, data_path_var = args.data_path
+                                  ,gpu_var=args.gpu,out_path_var=args.out_path,file_name=file)
+                            run_command(generation_command)
 
 if __name__ == "__main__":
     args = sys.argv[1:]

@@ -275,8 +275,7 @@ def main(argv):
     if mode.split('_')[-1]== 'topp':
         sample_lst = [float(x) for x in args.sample_lst.split(',')]
     else:
-        sample_lst = [int(x) for x in args.sample_lst.split(',')]  
-        
+        sample_lst = [int(x) for x in args.sample_lst.split(',')]
     temp_lst = [float(x) for x in args.temp_lst.split(',')]
     
     boundary_lst = args.boundary_lst
@@ -289,7 +288,6 @@ def main(argv):
 
     # generate tokens and calculate the entropy based on gpt-2
     print("Loading prompt data from {}...".format(DataPath))
-
     prompt = pd.read_csv(DataPath)
     # loop over decoding parameters and temperatures
     for decoding_para in tqdm(sample_lst):
