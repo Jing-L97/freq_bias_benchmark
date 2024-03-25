@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import sys
 from tqdm import tqdm
-from lm_benchmark.datasets.parsing_utils.train_parser import clean_text
+from lm_benchmark.datasets.load_data import txt2csv
 
 def parseArgs(argv):
     # Run parameters
@@ -41,21 +41,11 @@ def get_train(filename_path:str, text_dir:str,out_dir:str,chunk:str):
     Returns
         dataframe with columns: filename, train, num_tokens
     """
-    def count_token(text):
-        return len(text.split())
-
     # read the filename frame
     file_frame = pd.read_csv(filename_path + chunk + '.csv',header=None)
     train_frame = pd.DataFrame()
     for file in file_frame[0]:
-        with open(text_dir + file, encoding="utf8") as f:
-            lines = f.readlines()
-            cleaned_lines = clean_text(lines)
-            frame = pd.DataFrame(cleaned_lines)
-            # assign column headers
-            frame = frame.rename(columns={0:'train'})
-            frame['num_tokens'] = frame['train'].apply(count_token)
-            frame.insert(loc=0,column='filename',value=file)
+        frame = txt2csv(text_dir, file)
         train_frame = pd.concat([train_frame,frame])
 
     # save the result

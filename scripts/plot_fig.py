@@ -43,20 +43,22 @@ def get_equal_bins(data_frame, col_header:str, n_bins:int):
     return data_frame
 
 
-
+# re-calculate bins by same range of each bin
 def load_data(freq_path,file,y_header,temp_lst,max_freq,mode):
     """load data to plot figures"""
     freq_frame = pd.read_csv(freq_path + file)
     temp = file.split('_')[-2]
     temp_lst.append(float(temp))
      # remove oov words
-    freq_frame = freq_frame[freq_frame['train_Freq']!=0]
+    freq_frame = freq_frame[freq_frame['score']!='oov']
+    freq_frame['train_Log_norm_freq_per_million'] = freq_frame['train_Log_norm_freq_per_million'].astype(float)
+    freq_frame[y_header] = freq_frame[y_header].astype(float)
     if mode == 'bin':
         freq_frame = get_equal_bins(freq_frame,'train_Log_norm_freq_per_million', num_bins)
-        freq_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
+        stat_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
                                                           y_header: 'mean'})
-    max_freq.append(freq_frame['train_Log_norm_freq_per_million'].max())
-    return freq_frame,temp_lst,max_freq
+    max_freq.append(stat_frame['train_Log_norm_freq_per_million'].max())
+    return freq_frame,stat_frame,temp_lst,max_freq
 
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
@@ -75,6 +77,7 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     """
     compare effects of different temperatures
     y_header: y-axis header
+    multip[le: whether to compare different temperatures
     """
     freq_path = root_path + model_type + '/'
     temp_lst = []
@@ -82,7 +85,7 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode)
+            all_frame,freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode)
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
 
@@ -112,12 +115,48 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
         os.makedirs(fig_dir)
     plt.savefig(fig_dir + model_type + '_' + str(num_bins) + '.png', dpi=800)
 
-
+all_frame.to_csv('stat.csv')
 root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/'
 model_type = '400'
 num_bins = 20
-mode = 'dots'
+mode = 'bin'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header = 'Log_norm_freq_per_million'#'score'
+y_header = 'score'#'Log_norm_freq_per_million'  #''
 plot_inv(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
+def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
+
+    """
+    compare effects of different temperatures
+    y_header: y-axis header
+    multip[le: whether to compare different temperatures
+    """
+    freq_path = root_path + model_type + '/'
+    temp_lst = []
+    max_freq = []
+    for file in os.listdir(freq_path):
+        if not file.startswith('train'):
+            temp = file.split('_')[-2]
+            _,freq_frame, _, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,'dot')
+            plot_line(freq_frame['train_Log_norm_freq_per_million'],
+                         freq_frame[y_header], temp, model_type)
+            plt.xlim(-1, max(max_freq))
+            plt.ylim(-1, max(max_freq))
+            # Plot the diagonal line
+            plt.plot([-1, max(max_freq)], [-1, max(max_freq)], linewidth=3.5, color='red', linestyle='--')
+            y_label = 'log freq per million in generation'
+            plt.ylabel(y_label, fontsize=15)
+            # sort the temp list
+            plot_dir = fig_dir + '/' + y_header + '/'
+            if not os.path.exists(plot_dir):
+                os.makedirs(plot_dir)
+            plt.savefig(plot_dir + model_type + '_' + str(temp) + '.png', dpi=800)
+            plt.clf()
+
+
+root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/'
+model_type = '400'
+mode = 'dot'
+fig_dir = '/data/freq_bias_benchmark/data/fig/'
+y_header = 'Log_norm_freq_per_million'
+plot_scatter(root_path,model_type,y_header,fig_dir)
