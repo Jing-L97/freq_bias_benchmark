@@ -55,10 +55,10 @@ def load_data(freq_path,file,y_header,temp_lst,max_freq,mode):
     freq_frame[y_header] = freq_frame[y_header].astype(float)
     if mode == 'bin':
         freq_frame = get_equal_bins(freq_frame,'train_Log_norm_freq_per_million', num_bins)
-        stat_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
+        freq_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
                                                           y_header: 'mean'})
-    max_freq.append(stat_frame['train_Log_norm_freq_per_million'].max())
-    return freq_frame,stat_frame,temp_lst,max_freq
+    max_freq.append(freq_frame['train_Log_norm_freq_per_million'].max())
+    return freq_frame,temp_lst,max_freq
 
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
@@ -85,7 +85,7 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            all_frame,freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode)
+            freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode)
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
 
@@ -115,13 +115,13 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
         os.makedirs(fig_dir)
     plt.savefig(fig_dir + model_type + '_' + str(num_bins) + '.png', dpi=800)
 
-all_frame.to_csv('stat.csv')
-root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/'
+
+root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/'
 model_type = '400'
-num_bins = 20
+num_bins = 2
 mode = 'bin'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header = 'score'#'Log_norm_freq_per_million'  #''
+y_header =  'score' #'''Log_norm_freq_per_million'
 plot_inv(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
@@ -137,7 +137,7 @@ def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            _,freq_frame, _, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,'dot')
+            freq_frame, _, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,'dot')
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
             plt.xlim(-1, max(max_freq))
@@ -154,7 +154,7 @@ def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
             plt.clf()
 
 
-root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/'
+root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/oov/'
 model_type = '400'
 mode = 'dot'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
