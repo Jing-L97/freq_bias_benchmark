@@ -86,7 +86,7 @@ def match_freq(gen_path:str,train_path:str,out_path:str):
     return frame
 
 gen_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-train_path = '/data/freq_bias_benchmark/data/train/oov/train_freq/400/train_400.csv'
+train_path = '/data/freq_bias_benchmark/data/train/inv/train_freq/400.csv'
 out_path = '/data/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
 match_freq(gen_path,train_path,out_path)
 

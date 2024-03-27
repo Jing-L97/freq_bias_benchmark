@@ -5,6 +5,7 @@
 '''
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 import seaborn as sns
 from lm_benchmark.datasets.load_data import get_equal_quantity,get_equal_range,load_data
 
@@ -116,7 +117,7 @@ plot_scatter(root_path,model_type,y_header,fig_dir)
 
 
 
-def plot_zipf(input_path,out_path):
+def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
     """
     Plot word frequency distribution
     input: a list of word freq
@@ -126,7 +127,7 @@ def plot_zipf(input_path,out_path):
     freq_frame = pd.read_csv(input_path)
     aggregate = False
     if aggregate:
-        freq_frame = get_equal_range(freq_frame, 'Log_freq', 50)
+        freq_frame = get_equal_range(freq_frame, y_header, num_bins)
         freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
     word_freq = freq_frame['Log_freq'].tolist()
     # Sort word frequencies in descending order
@@ -139,6 +140,10 @@ def plot_zipf(input_path,out_path):
     plt.xlabel('Rank')
     plt.ylabel('Frequency')
     plt.title('Zipf\'s Law: Word Frequency Distribution')
+    plot_dir = fig_dir + '/zipf/' +  '/'
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    plt.savefig(plot_dir + model_type + '_' + str(temp) + '.png', dpi=800)
     plt.show()
 
 
@@ -153,8 +158,19 @@ for word in tokens:
     vocab_size.append(len(unique_words))
 
 
-def plot_heaps(vocab_size):
+def plot_heaps(input_path):
     """Plot vocab size distribution"""
+    
+    # load data
+    freq_frame = pd.read_csv(input_path)
+    aggregate = False
+    if aggregate:
+        freq_frame = get_equal_range(freq_frame, y_header, num_bins)
+        freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
+    word_freq = freq_frame['Log_freq'].tolist()
+    # Sort word frequencies in descending order
+    sorted_word_freq = sorted(word_freq, reverse=True)
+    
     plt.figure(figsize=(10, 5))
     plt.plot(range(len(vocab_size)), vocab_size)
     plt.xlabel('Text Length')
