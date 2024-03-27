@@ -49,42 +49,6 @@ def eval_freq(train_freq, gen_freq):
             return -1
 
 
-def match_freq(gen_path:str):
-    '''
-    map exp and filter freq: loop over the generated tokens
-    input: path to train adn gen freq
-    return updated gen csv
-    '''
-
-    train_freq = pd.read_csv(gen_path + 'train_' + gen_path.split('/')[-2] + '.csv')   # load train freq
-    # go over the train and gen freq df
-    for file in tqdm(os.listdir(gen_path)):
-        if not file.startswith('train'):
-            gen_freq = pd.read_csv(gen_path + file)
-            # match the freq info
-            frame = pd.DataFrame()
-            n = 0
-            while n < gen_freq.shape[0]:
-                gen_row = gen_freq.iloc[[n]]
-                try:
-                    selected_row = train_freq[train_freq['Word'] == gen_row['Word'].item()]
-                    for header in ['Freq', 'Norm_freq', 'Norm_freq_per_million', 'Log_freq', 'Log_norm_freq_per_million']:
-                        gen_row['train_' + header] = selected_row[header].item()
-                except:
-                    # fill zeros to the current dataframe; fill in zeros to the dataframe
-                    for header in ['Freq', 'Norm_freq', 'Norm_freq_per_million', 'Log_freq', 'Log_norm_freq_per_million']:
-                        gen_row['train_' + header] = 0
-                # concatenate the rows
-                frame = pd.concat([frame, gen_row])
-                n += 1
-
-        # assign comparison score   train_freq, gen_freq
-        frame['score'] = frame.apply(lambda row: eval_freq(row['train_Freq'], row['Freq']), axis=1)
-        # output the appended freq
-        frame.to_csv(gen_path + file)
-    return frame
-
-
 def match_freq(gen_path:str,train_path:str,out_path:str):
     '''
     map exp and filter freq: loop over the generated tokens
@@ -129,7 +93,6 @@ match_freq(gen_path,train_path,out_path)
 def main():
 
     # get freq of both generated freq and inv freq
-
 
 
     # match freq between train set and gen set

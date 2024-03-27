@@ -1,5 +1,5 @@
 """
-Construct same register of train data to estimate oov freq
+Construct same-sized datasets in/out of the domain
 """
 
 import os

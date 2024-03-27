@@ -3,63 +3,12 @@
 '''
 @author: jliu
 '''
-import pandas as pd
+import matplotlib.pyplot as plt
 import os
 import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
+from lm_benchmark.datasets.load_data import get_equal_quantity,get_equal_range,load_data
+
 sns.set_style('whitegrid')
-
-def get_equal_bins(data_frame, col_header:str, n_bins:int):
-    '''
-    get equal-sized bins
-    input: a sorted array or a list of numbers; computes a split of the data into n_bins bins of approximately the same size
-    return
-        bins: array with each bin boundary
-        data_frame: updated df with an additional column of group
-    '''
-    # sort the dataframe
-    data_frame = data_frame.sort_values(by=col_header)
-    data = data_frame[col_header]
-    # preparing data (adding small jitter to remove ties)
-    size = len(data)
-    assert n_bins <= size, "too many bins compared to data size"
-    mindif = np.min(np.abs(np.diff(np.sort(np.unique(data)))))  # minimum difference between consecutive distinct values
-    jitter = mindif * 0.01  # this small jitter will not change the relative order between datapoints
-    data_jitter = np.array(data) + np.random.uniform(low=-jitter, high=jitter, size=size)
-    data_sorted = np.sort(data_jitter)  # little jitter to remove ties
-
-    # Creating the bins with approx equal number of observations
-    bin_indices = np.linspace(1, len(data), n_bins + 1) - 1  # indices to edges in sorted data
-    bins = [data_sorted[0]]  # left edge inclusive
-    bins = np.append(bins, [(data_sorted[int(b)] + data_sorted[int(b + 1)]) / 2 for b in bin_indices[1:-1]])
-    bins = np.append(bins, data_sorted[-1] + jitter)  # this is because the extreme right edge is inclusive in plt.hits
-
-    # computing bin membership for the original data; append bin membership to stat
-    bin_membership = np.zeros(size, dtype=int)
-    for i in range(0, len(bins) - 1):
-        bin_membership[(data_jitter >= bins[i]) & (data_jitter < bins[i + 1])] = i
-    data_frame['group'] = bin_membership
-    return data_frame
-
-
-# re-calculate bins by same range of each bin
-def load_data(freq_path,file,y_header,temp_lst,max_freq,mode):
-    """load data to plot figures"""
-    freq_frame = pd.read_csv(freq_path + file)
-    temp = file.split('_')[-2]
-    temp_lst.append(float(temp))
-     # remove oov words
-    freq_frame = freq_frame[freq_frame['score']!='oov']
-    freq_frame['train_Log_norm_freq_per_million'] = freq_frame['train_Log_norm_freq_per_million'].astype(float)
-    freq_frame[y_header] = freq_frame[y_header].astype(float)
-    if mode == 'bin':
-        freq_frame = get_equal_bins(freq_frame,'train_Log_norm_freq_per_million', num_bins)
-        freq_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
-                                                          y_header: 'mean'})
-    max_freq.append(freq_frame['train_Log_norm_freq_per_million'].max())
-    return freq_frame,temp_lst,max_freq
-
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
     """plot scatter plot """
@@ -71,8 +20,7 @@ def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
     plt.show()
 
 
-
-def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
+def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
 
     """
     compare effects of different temperatures
@@ -85,7 +33,7 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode)
+            freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode,num_bins)
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
 
@@ -118,11 +66,11 @@ def plot_inv(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
 
 root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/'
 model_type = '400'
-num_bins = 2
-mode = 'bin'
+num_bins = 20
+mode = 'range'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header =  'score' #'''Log_norm_freq_per_million'
-plot_inv(root_path,model_type,y_header,num_bins,fig_dir,mode)
+y_header = 'Log_norm_freq_per_million' #'''Log_norm_freq_per_million'
+plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
 
@@ -137,7 +85,7 @@ def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            freq_frame, _, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,'dot')
+            freq_frame, _, max_freq = get_equal_quantity(freq_path,file,y_header,temp_lst,max_freq,'dot')
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
             plt.xlim(-1, max(max_freq))
@@ -160,3 +108,80 @@ mode = 'dot'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
 y_header = 'Log_norm_freq_per_million'
 plot_scatter(root_path,model_type,y_header,fig_dir)
+
+
+
+def plot_zipf(input_path,out_path):
+    """
+    Plot word frequency distribution
+    input: a list of word freq
+    this performs on text iteself without comparison
+    """
+    # load data
+    freq_frame = pd.read_csv(input_path)
+    aggregate = False
+    if aggregate:
+        freq_frame = get_equal_range(freq_frame, 'Log_freq', 50)
+        freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
+    word_freq = freq_frame['Log_freq'].tolist()
+    # Sort word frequencies in descending order
+    sorted_word_freq = sorted(word_freq, reverse=True)
+    rank_lst = [math.log10(x+1) for x in range(len(sorted_word_freq))]
+
+    # plot results
+    plt.figure(figsize=(10, 5))
+    plt.plot(rank_lst, sorted_word_freq)
+    plt.xlabel('Rank')
+    plt.ylabel('Frequency')
+    plt.title('Zipf\'s Law: Word Frequency Distribution')
+    plt.show()
+
+
+
+# Plot Heap's Law: Vocabulary Growth
+vocab_size = []
+word_count = 0
+unique_words = set()
+for word in tokens:
+    word_count += 1
+    unique_words.add(word)
+    vocab_size.append(len(unique_words))
+
+
+def plot_heaps(vocab_size):
+    """Plot vocab size distribution"""
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(len(vocab_size)), vocab_size)
+    plt.xlabel('Text Length')
+    plt.ylabel('Vocabulary Size')
+    plt.title('Heap\'s Law: Vocabulary Growth')
+    plt.show()
+
+
+import numpy as np
+total_words = len(text.split())
+def mutual_information(word1, word2):
+    p_word1 = word_freq[word1] / total_words
+    p_word2 = word_freq[word2] / total_words
+    p_word1_word2 = sum(1 for i in range(len(tokens) - 1) if tokens[i] == word1 and tokens[i + 1] == word2) / total_words
+    if p_word1_word2 == 0:
+        return 0
+    return np.log2(p_word1_word2 / (p_word1 * p_word2))
+
+# Compute mutual information for all word pairs
+word_pairs = [(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)]
+mutual_info_scores = [mutual_information(word1, word2) for word1, word2 in word_pairs]
+
+# Plot the mutual information scores
+plt.figure(figsize=(10, 5))
+plt.plot(range(len(mutual_info_scores)), mutual_info_scores)
+plt.xlabel('Word Pairs')
+plt.ylabel('Mutual Information')
+plt.title('Mutual Information of Words')
+plt.show()
+
+def plot_long_range():
+
+
+
+    return
