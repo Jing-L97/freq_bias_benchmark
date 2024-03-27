@@ -33,20 +33,25 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            freq_frame, temp_lst, max_freq = load_data(freq_path,file,y_header,temp_lst,max_freq,mode,num_bins)
+            binned_freq_frame,freq_frame, max_freq = load_data(freq_path,file,y_header,max_freq,mode,num_bins)
+            # print out the annotated groups
+            annotated_path = root_path + model_type + '/' + str(num_bins) + '/'
+            if not os.path.exists(annotated_path):
+                os.makedirs(annotated_path)
+            binned_freq_frame.to_csv(annotated_path + mode + '_' + file)
             plot_line(freq_frame['train_Log_norm_freq_per_million'],
                          freq_frame[y_header], temp, model_type)
 
-    plt.xlim(-1, max(max_freq))
+    plt.xlim(-1, max(max_freq) + 1)
     if y_header == 'score':
         plt.ylim(-1, 1)
         # Plot the boarder line
-        plt.plot([-1, max(max_freq)], [0, 0], linewidth=3.5, color='red', linestyle='--')
+        plt.plot([-1, max(max_freq)+1], [0, 0], linewidth=3.5, color='red', linestyle='--')
         y_label = y_header
     else:
-        plt.ylim(-1, max(max_freq))
+        plt.ylim(-1, max(max_freq)+1)
         # Plot the diagonal line
-        plt.plot([-1, max(max_freq)], [-1, max(max_freq)], linewidth=3.5, color='red', linestyle='--')
+        plt.plot([-1, max(max_freq)+1], [-1, max(max_freq)+1], linewidth=3.5, color='red', linestyle='--')
         y_label = 'log freq per million in generation'
 
     plt.ylabel(y_label, fontsize=15)
@@ -58,7 +63,7 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     handles_ordered = [label_handle_map[label] for label in label_lst]
     plt.legend(handles_ordered, label_lst)
 
-    fig_dir = fig_dir + '/' + y_header + '/'
+    fig_dir = fig_dir + '/' + y_header + '/' + mode + '/'
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
     plt.savefig(fig_dir + model_type + '_' + str(num_bins) + '.png', dpi=800)
@@ -66,10 +71,10 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
 
 root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/'
 model_type = '400'
-num_bins = 20
+num_bins = 15
 mode = 'range'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header = 'Log_norm_freq_per_million' #'''Log_norm_freq_per_million'
+y_header = 'score' #'Log_norm_freq_per_million'
 plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
