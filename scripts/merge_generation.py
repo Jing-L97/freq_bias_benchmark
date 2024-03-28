@@ -49,3 +49,6 @@ def append_row(generation_path:str, root_path:str,out_path:str,temp_lst:list,mod
 
 
 append_row(generation_path, root_path,out_path,temp_lst,model)
+
+gen = pd.read_csv('/data/freq_bias_benchmark/data/generation/generated/merged/400.csv')['num_tokens'].sum()
+train = pd.read_csv('/data/freq_bias_benchmark/data/train/inv/train_utt/400.csv')['num_tokens'].sum()

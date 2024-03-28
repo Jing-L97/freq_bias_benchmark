@@ -11,7 +11,7 @@ column_header_lst = ['Freq', 'Norm_freq', 'Norm_freq_per_million', 'Log_freq', '
 #text_path = '/data/freq_bias_benchmark/data/train/inv/train_utt/'   # only for oov generation reference text
 text_path = '/data/freq_bias_benchmark/data/generation/generated/merged/'
 out_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-column_list = ['train','unprompted_0.3','unprompted_0.6','unprompted_1.0','unprompted_1.5']
+column_list = ['train']
 
 def get_freq(text_path:str, out_dir:str,column_list:list):
     """
@@ -86,9 +86,9 @@ def match_freq(gen_path:str,train_path:str,out_path:str):
     return frame
 
 gen_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-train_path = '/data/freq_bias_benchmark/data/train/inv/train_freq/400.csv'
+train_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/train_400.csv'
 out_path = '/data/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
-match_freq(gen_path,train_path,out_path)
+#match_freq(gen_path,train_path,out_path)
 
 def load_df(path,starting_col):
     """load df by specifying starting column"""

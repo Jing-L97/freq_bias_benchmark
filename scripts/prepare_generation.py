@@ -122,7 +122,6 @@ def segment_generation(utt_path, model_lst, n):
         -------
             train: .csv train\num_token\generation(prompt_temp)
         '''
-
         def segment_dataframe(df, n):
             num_rows = len(df)
             segment_size = num_rows // n
@@ -150,6 +149,20 @@ def segment_generation(utt_path, model_lst, n):
                     os.makedirs(out_dir)
                 sub_df.to_csv(out_dir + str(n) + '.csv')
                 n += 1
+
+model_lst = ['400']
+n = 10
+utt_path = '/data/freq_bias_benchmark/data/generation/'
+segment_generation(utt_path, model_lst, n)
+
+
+# get the rest of the generation from the generated tokens
+gen = pd.read_csv('/data/freq_bias_benchmark/data/generation/generated/merged/400.csv')
+train = pd.read_csv('/data/freq_bias_benchmark/data/train/inv/train_utt/400.csv')
+missing_words = list(set(train['train']) - set(gen['train']))
+# select the rtest of the words
+missing_frame = train[train['train'].isin(missing_words)]
+missing_frame.to_csv('/data/freq_bias_benchmark/data/generation/400.csv')
 
 
 def main(argv):

@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import seaborn as sns
 from lm_benchmark.datasets.load_data import get_equal_quantity,get_equal_range,load_data
-
+import math
 sns.set_style('whitegrid')
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
@@ -22,21 +22,19 @@ def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
 
 
 def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
-
     """
     compare effects of different temperatures
     y_header: y-axis header
     multip[le: whether to compare different temperatures
     """
     freq_path = root_path + model_type + '/'
-    temp_lst = []
     max_freq = []
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
             binned_freq_frame,freq_frame, max_freq = load_data(freq_path,file,y_header,max_freq,mode,num_bins)
             # print out the annotated groups
-            annotated_path = root_path + model_type + '/' + str(num_bins) + '/'
+            annotated_path = root_path + str(num_bins) + '/'
             if not os.path.exists(annotated_path):
                 os.makedirs(annotated_path)
             binned_freq_frame.to_csv(annotated_path + mode + '_' + file)
@@ -72,10 +70,10 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
 
 root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/'
 model_type = '400'
-num_bins = 15
-mode = 'range'
+num_bins = 20
+mode = 'quantity'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header = 'score' #'Log_norm_freq_per_million'
+y_header = 'Log_norm_freq_per_million' #'score'
 plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
@@ -117,7 +115,7 @@ plot_scatter(root_path,model_type,y_header,fig_dir)
 
 
 
-def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
+def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str,label:str):
     """
     Plot word frequency distribution
     input: a list of word freq
@@ -125,37 +123,34 @@ def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
     """
     # load data
     freq_frame = pd.read_csv(input_path)
-    aggregate = False
-    if aggregate:
-        freq_frame = get_equal_range(freq_frame, y_header, num_bins)
-        freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
+    freq_frame = get_equal_range(freq_frame, y_header, num_bins)
+    freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
     word_freq = freq_frame['Log_freq'].tolist()
     # Sort word frequencies in descending order
     sorted_word_freq = sorted(word_freq, reverse=True)
     rank_lst = [math.log10(x+1) for x in range(len(sorted_word_freq))]
-
     # plot results
-    plt.figure(figsize=(10, 5))
-    plt.plot(rank_lst, sorted_word_freq)
+    plt.plot(rank_lst, sorted_word_freq,linewidth = 3.5, label = label)
     plt.xlabel('Rank')
     plt.ylabel('Frequency')
-    plt.title('Zipf\'s Law: Word Frequency Distribution')
-    plot_dir = fig_dir + '/zipf/' +  '/'
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    plt.savefig(plot_dir + model_type + '_' + str(temp) + '.png', dpi=800)
-    plt.show()
 
 
-
-# Plot Heap's Law: Vocabulary Growth
-vocab_size = []
-word_count = 0
-unique_words = set()
-for word in tokens:
-    word_count += 1
-    unique_words.add(word)
-    vocab_size.append(len(unique_words))
+num_bins = 50
+input_root = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
+fig_dir = '/data/freq_bias_benchmark/data/fig/'
+label_lst = ['0.3', '0.6', '1.0', '1.5']
+mode = 'range'
+for file in os.listdir(input_root):
+    label = file.split('_')[-2]
+    input_path = input_root + file
+    plot_zipf(input_path,y_header,num_bins,fig_dir,mode,label)
+plot_dir = fig_dir + '/zipf/' +  '/'
+if not os.path.exists(plot_dir):
+    os.makedirs(plot_dir)
+plt.savefig(plot_dir + model_type + '.png', dpi=800)
+plt.show()
+plt.legend()
+plt.title('Zipf\'s Law: Word Frequency Distribution')
 
 
 def plot_heaps(input_path):
@@ -177,6 +172,13 @@ def plot_heaps(input_path):
     plt.ylabel('Vocabulary Size')
     plt.title('Heap\'s Law: Vocabulary Growth')
     plt.show()
+
+
+
+
+
+
+
 
 
 import numpy as np
@@ -201,8 +203,3 @@ plt.ylabel('Mutual Information')
 plt.title('Mutual Information of Words')
 plt.show()
 
-def plot_long_range():
-
-
-
-    return
