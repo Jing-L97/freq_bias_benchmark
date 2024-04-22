@@ -130,20 +130,3 @@ def load_data(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
 
 
 
-
-# Create a DataFrame for demonstration
-data = {'Name': ['Alice', 'Bob', 'Charlie', 'David'],
-        'Age': [25, 30, 35, 40],
-        'Gender': ['Female', 'Male', 'Male', 'Male']}
-df = pd.DataFrame(data)
-
-# Original DataFrame
-print("Original DataFrame:")
-print(df)
-
-# Replace 'Male' with 'Man' in the 'Gender' column
-
-
-# Updated DataFrame
-print("\nDataFrame after replacing values:")
-print(df)
