@@ -5,7 +5,7 @@ Construct same-sized datasets in/out of the domain
 import os
 import pandas as pd
 from tqdm import tqdm
-from lm_benchmark.datasets.load_data import txt2csv
+from lm_benchmark.load_data import txt2csv
 
 filename_path = '/data/freq_bias_benchmark/data/train/filename/7100.csv'
 train_freq_dir = '/data/freq_bias_benchmark/data/train/train_freq/'

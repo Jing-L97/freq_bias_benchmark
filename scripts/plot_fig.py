@@ -7,21 +7,22 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import seaborn as sns
-from lm_benchmark.datasets.load_data import get_equal_quantity,get_equal_range,load_data
+from lm_benchmark.load_data import get_equal_quantity,get_equal_range,load_data
 import math
 sns.set_style('whitegrid')
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
     """plot scatter plot """
     plt.scatter(freq_lst, score_lst, label=str(temp))
-    sns.lineplot(freq_lst, score_lst, linewidth=3.5)
+    sns.lineplot(x = freq_lst, y = score_lst, linewidth=3.5)
     # fit the log curve with error bars
     plt.xlabel('log freq per million in train set', fontsize=15)
     plt.title('Model trained on {} hour audiobook'.format(model_type), fontsize=15, fontweight='bold')
     plt.show()
 
 
-def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
+
+def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str,oov=False):
     """
     compare effects of different temperatures
     y_header: y-axis header
@@ -32,7 +33,7 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     for file in os.listdir(freq_path):
         if not file.startswith('train'):
             temp = file.split('_')[-2]
-            binned_freq_frame,freq_frame, max_freq = load_data(freq_path,file,y_header,max_freq,mode,num_bins)
+            binned_freq_frame,freq_frame, max_freq = load_data(freq_path,file,y_header,max_freq,mode,num_bins,oov)
             # print out the annotated groups
             annotated_path = root_path + str(num_bins) + '/'
             if not os.path.exists(annotated_path):
@@ -65,16 +66,23 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     fig_dir = fig_dir + '/' + y_header + '/' + mode + '/'
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
-    plt.savefig(fig_dir + model_type + '_' + str(num_bins) + '.png', dpi=800)
+    if oov:
+        fig_title = fig_dir + model_type + '_oov_' + str(num_bins) + '.png'
+    if not oov:
+        fig_title = fig_dir + model_type + '_' + str(num_bins) + '.png'
+    plt.savefig(fig_title, dpi=800)
 
 
-root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/'
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/'
 model_type = '400'
 num_bins = 20
-mode = 'quantity'
-fig_dir = '/data/freq_bias_benchmark/data/fig/'
-y_header = 'Log_norm_freq_per_million' #'score'
-plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode)
+oov = True
+#mode = 'quantity'   #range
+mode = 'range'
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
+#y_header = 'Log_norm_freq_per_million' #'score'
+y_header = 'score'
+plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode,oov)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
 
@@ -106,7 +114,7 @@ def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
             plt.clf()
 
 
-root_path = '/data/freq_bias_benchmark/data/generation/gen_freq/oov/'
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/'
 model_type = '400'
 mode = 'dot'
 fig_dir = '/data/freq_bias_benchmark/data/fig/'
@@ -131,19 +139,39 @@ def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str,labe
     rank_lst = [math.log10(x+1) for x in range(len(sorted_word_freq))]
     # plot results
     plt.plot(rank_lst, sorted_word_freq,linewidth = 3.5, label = label)
+    #plt.plot(rank_lst, sorted_word_freq, label=label)
     plt.xlabel('Rank')
     plt.ylabel('Frequency')
 
 
-num_bins = 50
-input_root = '/data/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-fig_dir = '/data/freq_bias_benchmark/data/fig/'
+num_bins = 20
+input_root = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
 label_lst = ['0.3', '0.6', '1.0', '1.5']
 mode = 'range'
 for file in os.listdir(input_root):
-    label = file.split('_')[-2]
-    input_path = input_root + file
-    plot_zipf(input_path,y_header,num_bins,fig_dir,mode,label)
+    if file.endswith('.csv'):
+        label = file.split('_')[-2]
+        print(label)
+        input_path = input_root + file
+        # change into different headers
+        if label == 'train':
+            y_header = 'train_Log_norm_freq_per_million'
+        else:
+            y_header = 'Log_norm_freq_per_million'
+        plot_zipf(input_path,y_header,num_bins,fig_dir,mode,label)
+
+# Specify the desired order of legend labels
+legend_order = ['train', '0.3', '0.6', '1.0', '1.5']
+# Get the handles and labels of the current axes
+handles, labels = plt.gca().get_legend_handles_labels()
+# Create a dictionary to map labels to handles
+label_to_handle = dict(zip(labels, handles))
+# Create sorted handles list based on the desired order
+handles_sorted = [label_to_handle[label] for label in legend_order]
+# Create the legend with sorted handles and specified labels
+plt.legend(handles_sorted, legend_order, loc='best')
+
 plot_dir = fig_dir + '/zipf/' +  '/'
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -151,6 +179,7 @@ plt.savefig(plot_dir + model_type + '.png', dpi=800)
 plt.show()
 plt.legend()
 plt.title('Zipf\'s Law: Word Frequency Distribution')
+
 
 
 def plot_heaps(input_path):

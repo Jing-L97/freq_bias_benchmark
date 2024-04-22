@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import sys
 from tqdm import tqdm
-from lm_benchmark.datasets.load_data import txt2csv
+from lm_benchmark.load_data import txt2csv
 
 def parseArgs(argv):
     # Run parameters
