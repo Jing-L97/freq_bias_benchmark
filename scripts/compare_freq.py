@@ -36,7 +36,6 @@ def get_freq(text_path:str, out_dir:str,column_list:list):
 
 
 
-
 def eval_freq(train_freq, gen_freq):
     '''
     assign scores for freq comparison
@@ -87,10 +86,7 @@ def match_freq(gen_path:str,train_path:str,out_path:str):
             frame.to_csv(out_path + file)
     return frame
 
-gen_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-train_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/train_400.csv'
-out_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
-match_freq(gen_path,train_path,out_path)
+
 
 def load_df(path,starting_col):
     """load df by specifying starting column"""
@@ -99,12 +95,25 @@ def load_df(path,starting_col):
     train_freq = train_freq.iloc[:, start_index:]
     return train_freq
 
-# append another column the missing word to the original dataset
-train_freq = load_df(train_path,'Word')
-# go over the train and gen freq df
-for file in tqdm(os.listdir(gen_path)):
+
+def main():
+
+    # get freq of both generated freq and inv freq
+    gen_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
+    train_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/train_400.csv'
+    out_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
+    match_freq(gen_path, train_path, out_path)
+
+    # match freq between train set and gen set
+
+
+    # match oov tokens between pseudo set and oov parts in the genration
+    # append another column the missing word to the original dataset
+    train_freq = load_df(train_path, 'Word')
+    # go over the train and gen freq df
+    for file in tqdm(os.listdir(gen_path)):
         if not file.startswith('train'):
-            gen_freq = load_df(gen_path + file,'Word')
+            gen_freq = load_df(gen_path + file, 'Word')
             gen_freq['category'] = 'generation'
             # append additional rows of missing words
             missing_words = list(set(train_freq['Word']) - set(gen_freq['Word']))
@@ -114,19 +123,10 @@ for file in tqdm(os.listdir(gen_path)):
             for header in column_header_lst:
                 missing_frame[header] = 0
             n = 0
-            while n <len(column_header_lst):
+            while n < len(column_header_lst):
                 missing_frame['train_' + column_header_lst[n]] = train_freq_col[column_header_lst[n]]
                 n += 1
             missing_frame['score'] = 0
             missing_frame['category'] = 'train'
-            frame_all = pd.concat([gen_freq,missing_frame])
+            frame_all = pd.concat([gen_freq, missing_frame])
             frame_all.to_csv(gen_path + file)
-def main():
-
-    # get freq of both generated freq and inv freq
-
-
-    # match freq between train set and gen set
-
-
-    # match oov tokens between pseudo set and oov parts in the genration
