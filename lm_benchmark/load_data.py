@@ -101,7 +101,7 @@ def get_equal_range(data_frame, col_header:str, n_bins:int):
 
 
 # re-calculate bins by same range of each bin
-def load_data(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
+def load_data1(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
     """
     load data to plot figures
     mode: quantity(equal number og points )
@@ -113,6 +113,7 @@ def load_data(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
     else:
         # remove oov words
         freq_frame = freq_frame[freq_frame['score']!='oov']
+
     freq_frame['train_Log_norm_freq_per_million'] = freq_frame['train_Log_norm_freq_per_million'].astype(float)
     freq_frame[y_header] = freq_frame[y_header].astype(float)
 
@@ -127,6 +128,27 @@ def load_data(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
     max_freq.append(freq_frame['train_Log_norm_freq_per_million'].max())
     return freq_frame,binned_freq_frame,max_freq
 
+
+def load_data(freq_path,y_header,max_freq,mode, num_bins):
+    """
+    load data to plot figures
+    mode: quantity(equal number og points )
+    """
+    freq_frame = pd.read_csv(freq_path)
+
+    freq_frame['Log_norm_freq_per_million'] = freq_frame['Log_norm_freq_per_million'].astype(float)
+    freq_frame[y_header] = freq_frame[y_header].astype(float)
+
+    # bin the data to plot trends
+    if mode == 'quantity':
+        freq_frame = get_equal_quantity(freq_frame,'Log_norm_freq_per_million', num_bins)
+    elif mode == 'range':
+        freq_frame = get_equal_range(freq_frame,'Log_norm_freq_per_million', num_bins)
+
+    binned_freq_frame = freq_frame.groupby('group').agg({'Log_norm_freq_per_million': 'mean',
+                                                      y_header: 'mean'})
+    max_freq.append(freq_frame['Log_norm_freq_per_million'].max())
+    return freq_frame,binned_freq_frame,max_freq
 
 
 

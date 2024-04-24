@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import seaborn as sns
-from lm_benchmark.load_data import get_equal_quantity,get_equal_range,load_data
+from lm_benchmark.load_data import get_equal_range,load_data
 import math
 sns.set_style('whitegrid')
 
@@ -22,7 +22,7 @@ def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
 
 
 
-def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str,oov=False):
+def plot_bin1(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str,oov=False):
     """
     compare effects of different temperatures
     y_header: y-axis header
@@ -73,16 +73,64 @@ def plot_bin(root_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,
     plt.savefig(fig_title, dpi=800)
 
 
-root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/'
+def plot_bin(freq_path:str,model_type:str,y_header:str,num_bins:int,fig_dir:str,mode:str):
+    """
+    compare effects of different temperatures
+    y_header: y-axis header
+    multip[le: whether to compare different temperatures
+    """
+    max_freq = []
+    label_lst = ['0.3', '0.6', '1.0', '1.5']
+
+    for temp in label_lst:
+            header = temp + '_' + y_header
+            binned_freq_frame,freq_frame, max_freq = load_data(freq_path,header,max_freq,mode,num_bins)
+            # print out the annotated groups
+            annotated_path = root_path + str(num_bins) + '/'
+            if not os.path.exists(annotated_path):
+                os.makedirs(annotated_path)
+            #binned_freq_frame.to_csv(annotated_path + mode + '_' + file)
+            plot_line(freq_frame['Log_norm_freq_per_million'],
+                         freq_frame[header], temp, model_type)
+
+    plt.xlim(-1, max(max_freq) + 1)
+    if y_header == 'score':
+        plt.ylim(-1, 1)
+        # Plot the boarder line
+        plt.plot([-1, max(max_freq)+1], [0, 0], linewidth=3.5, color='red', linestyle='--')
+        y_label = y_header
+    else:
+        plt.ylim(-1, max(max_freq)+1)
+        # Plot the diagonal line
+        plt.plot([-1, max(max_freq)+1], [-1, max(max_freq)+1], linewidth=3.5, color='red', linestyle='--')
+        y_label = 'log freq per million in generation'
+
+    plt.ylabel(y_label, fontsize=15)
+    # sort the temp list
+
+    handles, labels = plt.gca().get_legend_handles_labels()
+    # Create a dictionary to map labels to handles
+    label_handle_map = dict(zip(labels, handles))
+    handles_ordered = [label_handle_map[label] for label in label_lst]
+    plt.legend(handles_ordered, label_lst)
+
+    fig_dir = fig_dir + '/' + y_header + '/' + mode + '/'
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
+
+    fig_title = fig_dir + model_type + '_' + str(num_bins) + '.png'
+    plt.savefig(fig_title, dpi=800)
+
+
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/1_gram/matched.csv'
 model_type = '400'
 num_bins = 20
-oov = True
 #mode = 'quantity'   #range
 mode = 'range'
 fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
 #y_header = 'Log_norm_freq_per_million' #'score'
 y_header = 'score'
-plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode,oov)
+plot_bin(root_path,model_type,y_header,num_bins,fig_dir,mode)
 
 def plot_scatter(root_path:str,model_type:str,y_header:str,fig_dir:str):
 
