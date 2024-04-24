@@ -124,85 +124,96 @@ y_header = 'Log_norm_freq_per_million'
 plot_scatter(root_path,model_type,y_header,fig_dir)
 
 
+def compare_zipf(input_root, fig_dir, n_gram, model_type):
+    def plot_zipf(input_path:str,y_header:str,num_bins:int,mode:str,label:str):
+        """
+        Plot word frequency distribution
+        input: a list of word freq
+        this performs on text iteself without comparison
+        """
+        # load data
+        freq_frame = pd.read_csv(input_path)
+        if mode == 'range':
+            freq_frame = get_equal_range(freq_frame, y_header, num_bins)
+        freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
+        word_freq = freq_frame['Log_freq'].tolist()
+        # Sort word frequencies in descending order
+        sorted_word_freq = sorted(word_freq, reverse=True)
+        rank_lst = [math.log10(x+1) for x in range(len(sorted_word_freq))]
+        # plot results
+        plt.plot(rank_lst, sorted_word_freq,linewidth = 3.5, label = label)
+        plt.ylim(0, 6)
+        plt.xlabel('Rank')
+        plt.ylabel('Frequency')
 
-def plot_zipf(input_path:str,y_header:str,num_bins:int,fig_dir:str,mode:str,label:str):
-    """
-    Plot word frequency distribution
-    input: a list of word freq
-    this performs on text iteself without comparison
-    """
-    # load data
-    freq_frame = pd.read_csv(input_path)
-    freq_frame = get_equal_range(freq_frame, y_header, num_bins)
-    freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
-    word_freq = freq_frame['Log_freq'].tolist()
-    # Sort word frequencies in descending order
-    sorted_word_freq = sorted(word_freq, reverse=True)
-    rank_lst = [math.log10(x+1) for x in range(len(sorted_word_freq))]
-    # plot results
-    plt.plot(rank_lst, sorted_word_freq,linewidth = 3.5, label = label)
-    #plt.plot(rank_lst, sorted_word_freq, label=label)
-    plt.xlabel('Rank')
-    plt.ylabel('Frequency')
+    num_bins = 20
+    mode = 'range'
 
-
-num_bins = 20
-input_root = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
-fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
-label_lst = ['0.3', '0.6', '1.0', '1.5']
-mode = 'range'
-for file in os.listdir(input_root):
-    if file.endswith('.csv'):
-        label = file.split('_')[-2]
-        print(label)
-        input_path = input_root + file
-        # change into different headers
-        if label == 'train':
-            y_header = 'train_Log_norm_freq_per_million'
-        else:
+    for file in os.listdir(input_root + str(n_gram) + '_gram/'):
+        if file.endswith('.csv'):
+            label = file.split('_')[-2]
+            input_path = input_root + str(n_gram) + '_gram/' + file
+            # change into different headers
             y_header = 'Log_norm_freq_per_million'
-        plot_zipf(input_path,y_header,num_bins,fig_dir,mode,label)
+            plot_zipf(input_path,y_header,num_bins,mode,label)
+            plt.title('Zipf\'s Law: ' + str(n_gram) + '_gram')
+    # Specify the desired order of legend labels
+    legend_order = ['train', '0.3', '0.6', '1.0', '1.5']
+    # Get the handles and labels of the current axes
+    handles, labels = plt.gca().get_legend_handles_labels()
+    # Create a dictionary to map labels to handles
+    label_to_handle = dict(zip(labels, handles))
+    # Create sorted handles list based on the desired order
+    handles_sorted = [label_to_handle[label] for label in legend_order]
+    # Create the legend with sorted handles and specified labels
+    plt.legend(handles_sorted, legend_order, loc='best')
+    plot_dir = fig_dir + '/zipf/' + model_type + '/'
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    plt.savefig(plot_dir + str(n_gram) + '.png', dpi=800)
+    plt.legend()
+    plt.clf()
 
-# Specify the desired order of legend labels
-legend_order = ['train', '0.3', '0.6', '1.0', '1.5']
-# Get the handles and labels of the current axes
-handles, labels = plt.gca().get_legend_handles_labels()
-# Create a dictionary to map labels to handles
-label_to_handle = dict(zip(labels, handles))
-# Create sorted handles list based on the desired order
-handles_sorted = [label_to_handle[label] for label in legend_order]
-# Create the legend with sorted handles and specified labels
-plt.legend(handles_sorted, legend_order, loc='best')
 
-plot_dir = fig_dir + '/zipf/' +  '/'
-if not os.path.exists(plot_dir):
-    os.makedirs(plot_dir)
-plt.savefig(plot_dir + model_type + '.png', dpi=800)
-plt.show()
-plt.legend()
-plt.title('Zipf\'s Law: Word Frequency Distribution')
+
+def plot_distinct_n(input_root,fig_dir,n_gram,model_type):
+    #input_root = input_root + str(model_type) + '/'
+    label_lst = ['train','0.3', '0.6', '1.0', '1.5']
+    plot_dir = fig_dir + 'distinct_n/'
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    ttr_lst = []
+    for label in label_lst:
+            # change into different headers
+            if label == 'train':
+                frame = pd.read_csv(input_root + str(n_gram) + '_gram/train_400.csv')
+            else:
+                frame = pd.read_csv(input_root + str(n_gram) + '_gram/unprompted_'+label+'_400.csv')
+            ttr = frame.shape[0]/frame['Freq'].sum()
+            ttr_lst.append(ttr)
+    sns.lineplot(x = label_lst, y = ttr_lst, linewidth=3.5,label = 'n = ' + str(n_gram))
+    plt.xlabel('temperature', fontsize=15)
+    plt.ylabel('ratio', fontsize=15)
+    plt.ylim(0, 1)
+    plt.title('Distinct-n across different temperatures', fontsize=15, fontweight='bold')
+    plt.savefig(plot_dir + str(model_type) + '.png', dpi=800)
 
 
 
 # plot ttr
-input_root = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/'
+model_type = '400'
+input_root = ('/Users/jli'
+              'u/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/')
 fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
-label_lst = ['train','0.3', '0.6', '1.0', '1.5']
-ttr_lst = []
-for label in label_lst:
-        # change into different headers
-        if label == 'train':
-            frame = pd.read_csv(input_root + 'train_400.csv')
-            ttr = frame.shape[0]/frame['train_Freq'].sum()
-        else:
-            frame = pd.read_csv(input_root + 'unprompted_'+label+'_400.csv')
-            ttr = frame.shape[0]/frame['Freq'].sum()
-        ttr_lst.append(ttr)
-sns.lineplot(x = label_lst, y = ttr_lst, linewidth=3.5)
-plt.xlabel('temperature', fontsize=15)
-plt.ylabel('type-token ratio', fontsize=15)
-plt.title('Type-token ratio in different temperatures', fontsize=15, fontweight='bold')
-plt.show()
+n_gram_lst = [1,2,3,4,5]
+#n_gram_lst = [2]
+for n_gram in n_gram_lst:
+    #plot_distinct_n(input_root, fig_dir, n_gram, model_type)
+    compare_zipf(input_root, fig_dir, n_gram, model_type)
+
+
+
+
 
 def plot_heaps(input_path):
     """Plot vocab size distribution"""
@@ -227,30 +238,4 @@ def plot_heaps(input_path):
 
 
 
-
-
-
-
-
-import numpy as np
-total_words = len(text.split())
-def mutual_information(word1, word2):
-    p_word1 = word_freq[word1] / total_words
-    p_word2 = word_freq[word2] / total_words
-    p_word1_word2 = sum(1 for i in range(len(tokens) - 1) if tokens[i] == word1 and tokens[i + 1] == word2) / total_words
-    if p_word1_word2 == 0:
-        return 0
-    return np.log2(p_word1_word2 / (p_word1 * p_word2))
-
-# Compute mutual information for all word pairs
-word_pairs = [(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)]
-mutual_info_scores = [mutual_information(word1, word2) for word1, word2 in word_pairs]
-
-# Plot the mutual information scores
-plt.figure(figsize=(10, 5))
-plt.plot(range(len(mutual_info_scores)), mutual_info_scores)
-plt.xlabel('Word Pairs')
-plt.ylabel('Mutual Information')
-plt.title('Mutual Information of Words')
-plt.show()
 
