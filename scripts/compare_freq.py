@@ -1,5 +1,5 @@
 """
-compare the freq between the generation and train set
+match and compare the freq between the generation and train set
 """
 import pandas as pd
 import os
@@ -8,11 +8,6 @@ from lm_benchmark.compare_util import get_freq_table
 column_header_lst = ['Freq', 'Norm_freq', 'Norm_freq_per_million', 'Log_freq', 'Log_norm_freq_per_million']
 
 
-text_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/train_utt/'   # only for oov generation reference text
-text_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/unprompted/sample_random/generated/merged/'
-out_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
-column_list = ['unprompted_0.3','unprompted_0.6','unprompted_1.0','unprompted_1.5']
-column_list = ['train']
 def get_freq(text_path:str, out_dir:str,column_list:list):
     """
     get freq from the train/generated tokens
@@ -97,6 +92,11 @@ def load_df(path,starting_col):
 
 
 def main():
+    text_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/train_utt/'  # only for oov generation reference text
+    text_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/unprompted/sample_random/generated/merged/'
+    out_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
+    column_list = ['unprompted_0.3', 'unprompted_0.6', 'unprompted_1.0', 'unprompted_1.5']
+    column_list = ['train']
 
     # get freq of both generated freq and inv freq
     gen_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/'
