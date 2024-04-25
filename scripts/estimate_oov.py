@@ -7,10 +7,10 @@ import pandas as pd
 from tqdm import tqdm
 from lm_benchmark.load_data import txt2csv
 
-filename_path = '/data/freq_bias_benchmark/data/train/filename/7100.csv'
-train_freq_dir = '/data/freq_bias_benchmark/data/train/train_freq/'
-text_dir = '/data/Machine_CDI/Lexical-benchmark_data/train_phoneme/dataset/'
-out_dir = '/data/freq_bias_benchmark/data/train/oov/train_utt/'
+filename_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/filename/7100.csv'
+train_freq_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/train_freq/'
+text_dir = '/Users/jliu/PycharmProjects/Machine_CDI/Lexical-benchmark_data/train_phoneme/dataset/'
+out_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/oov/train_utt/'
 
 
 def remove_file(large_list,sublist_to_remove):
@@ -39,7 +39,7 @@ def cut_df(df,target_cum_sum):
 def get_oov_mat(filename_path:str, train_freq_dir:str, text_dir:str,out_dir:str):
 
     """
-    constructhe target pseudo dataset to estimate oov token freq
+    construct the target pseudo dataset to estimate oov token freq
     """
     def count_token(text):
         return len(text.split())
