@@ -1,9 +1,31 @@
 """
-common func to prepare for generation set
+func to load data
 """
-from lm_benchmark.datasets.parsing_utils.train_parser import clean_text
+
 import pandas as pd
 import numpy as np
+import string
+import re
+from tqdm import tqdm
+
+def clean_text(loaded:list):
+    """
+    remove digits and punct of a text string
+    Returns
+    -------
+    a list of the cleaned string
+    """
+    result = [line for line in loaded if line.strip()]
+    cleaned_text = []
+    for sent in tqdm(result):
+        # remove punctuations
+        translator = str.maketrans('', '', string.punctuation + string.digits)
+        clean_string = sent.translate(translator)
+        clean_string = re.sub(r'\s+', ' ', clean_string)
+        clean_string = clean_string.strip()
+        cleaned_text.append(clean_string)
+    return cleaned_text
+
 def count_token(text):
     return len(text.split())
 
@@ -97,36 +119,6 @@ def get_equal_range(data_frame, col_header:str, n_bins:int):
     return data_frame_all
 
 
-
-
-
-# re-calculate bins by same range of each bin
-def load_data1(freq_path,file,y_header,max_freq,mode, num_bins, oov=False):
-    """
-    load data to plot figures
-    mode: quantity(equal number og points )
-    """
-    freq_frame = pd.read_csv(freq_path + file)
-    # if incorporate oov, convert the score into -1, otherwise remove the oov words
-    if oov:
-        freq_frame['score'] = freq_frame['score'].replace('oov', 1)
-    else:
-        # remove oov words
-        freq_frame = freq_frame[freq_frame['score']!='oov']
-
-    freq_frame['train_Log_norm_freq_per_million'] = freq_frame['train_Log_norm_freq_per_million'].astype(float)
-    freq_frame[y_header] = freq_frame[y_header].astype(float)
-
-    # bin the data to plot trends
-    if mode == 'quantity':
-        freq_frame = get_equal_quantity(freq_frame,'train_Log_norm_freq_per_million', num_bins)
-    elif mode == 'range':
-        freq_frame = get_equal_range(freq_frame,'train_Log_norm_freq_per_million', num_bins)
-
-    binned_freq_frame = freq_frame.groupby('group').agg({'train_Log_norm_freq_per_million': 'mean',
-                                                      y_header: 'mean'})
-    max_freq.append(freq_frame['train_Log_norm_freq_per_million'].max())
-    return freq_frame,binned_freq_frame,max_freq
 
 
 def load_data(freq_path,y_header,max_freq,mode, num_bins):

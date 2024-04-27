@@ -3,12 +3,14 @@
 '''
 @author: jliu
 '''
+
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import seaborn as sns
 from lm_benchmark.load_data import get_equal_range,load_data
 import math
+import numpy as np
 sns.set_style('whitegrid')
 
 def plot_line(freq_lst: list, score_lst: list, temp: str, model_type: str):
@@ -183,6 +185,7 @@ def compare_zipf(input_root, fig_dir, n_gram, model_type):
         freq_frame = pd.read_csv(input_path)
         if mode == 'range':
             freq_frame = get_equal_range(freq_frame, y_header, num_bins)
+
         freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
         word_freq = freq_frame['Log_freq'].tolist()
         # Sort word frequencies in descending order
@@ -259,31 +262,88 @@ for n_gram in n_gram_lst:
     #plot_distinct_n(input_root, fig_dir, n_gram, model_type)
     compare_zipf(input_root, fig_dir, n_gram, model_type)
 
+def plot_distr(data:list,temp:str,num_bins:int,mode:str):
+    """plot distr of selected words"""
+    # Plot the number distribution
+    data = sorted(data)
+    # Compute histogram
+    if mode == 'range':
+
+        counts, bin_edges = np.histogram(data, bins=num_bins, range=(min(data), max(data) + 1))
+        # Plot the curve
+        plt.plot(bin_edges[:-1], counts, marker='o', linestyle='-',label = temp)
+
+    elif mode == 'quantity':
+        '''
+        bins = pd.qcut(data, q=num_bins, duplicates='drop', labels=False)
+        bin_counts = np.bincount(bins)
+        # Plot the histogram
+        plt.plot(range(len(bin_counts)), bin_counts, marker='o', linestyle='-', label=temp)
+        '''
+        counts, bin_edges = np.histogram(data, bins=num_bins)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Compute bin centers
+        plt.plot(bin_centers, counts, marker='o', linestyle='-', label=temp)
+
+    plt.legend()
 
 
 
+def plot_missing_freq(root_path:str,temp_lst:list,fig_dir:str,mode:str):
+    """plot missing words in the train set"""
+    all_freq = pd.read_csv(root_path)
+    # select the missing words in differnt temp
+    for temp in temp_lst:
+        selected_freq = all_freq[all_freq[temp + '_Log_norm_freq_per_million'] == -5000]
+        # plot the corresponding distr
+        plot_distr(selected_freq['Log_norm_freq_per_million'],temp,num_bins,mode)
+    # Add labels and title
+    plt.xlabel('Log_norm_freq_per_million in train set', fontsize=12, fontweight='bold')
+    plt.ylabel('Missing words Count', fontsize=12, fontweight='bold')
+    plt.title('Missing words freq distribution in train set', fontsize=15, fontweight='bold')
+    plt.xlim(-1, 4.5)
+    # Set figure size
+    plt.gcf().set_size_inches(10, 4)
+    plt.savefig(fig_dir + mode +'.png', dpi=800)
+    plt.clf()
 
-def plot_heaps(input_path):
-    """Plot vocab size distribution"""
-    
-    # load data
-    freq_frame = pd.read_csv(input_path)
-    aggregate = False
-    if aggregate:
-        freq_frame = get_equal_range(freq_frame, y_header, num_bins)
-        freq_frame = freq_frame.groupby('group').agg({'Log_freq': 'mean'})
-    word_freq = freq_frame['Log_freq'].tolist()
-    # Sort word frequencies in descending order
-    sorted_word_freq = sorted(word_freq, reverse=True)
-    
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(len(vocab_size)), vocab_size)
-    plt.xlabel('Text Length')
-    plt.ylabel('Vocabulary Size')
-    plt.title('Heap\'s Law: Vocabulary Growth')
-    plt.show()
+# select the missing words in different temp
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/1_gram/matched.csv'
+temp_lst = ['0.3', '0.6', '1.0', '1.5']
+num_bins = 20
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/missing_words/'
+mode = 'quantity'
+plot_missing_freq(root_path,temp_lst,fig_dir,mode)
+
+def plot_oov(root_path:str,freq_path:str,temp_lst:list,fig_dir:str,mode:str,set_type:str):
+    """plot the oov words freq in the generation set"""
+    ref_freq = pd.read_csv(freq_path + set_type + '.csv')
+    # loop and get oov frames
+    for temp in temp_lst:
+        all_freq = pd.read_csv(root_path+temp+'_400.csv')
+        selected_words = all_freq[all_freq['score'] == 'oov']['Word']
+        selected_freq = ref_freq[ref_freq['Word'].isin(selected_words)]
+        # match the corresponding words in the reference set
+        plot_distr(selected_freq['Log_norm_freq_per_million'],temp,num_bins,mode)
+    # Set figure size
+    # Add labels and title
+    plt.xlabel('Log_norm_freq_per_million in ' +  set_type + ' set', fontsize=12, fontweight='bold')
+    plt.ylabel('OOV words count', fontsize=12, fontweight='bold')
+
+    plt.ylim(0, 6000)
+    plt.xlim(-1, 4.5)
 
 
+    plt.title('OOV words freq distribution in ' + set_type + ' set', fontsize=15, fontweight='bold')
+    plt.gcf().set_size_inches(10, 4)
+    plt.savefig(fig_dir + set_type + '_' + mode +'.png', dpi=800)
+    plt.clf()
 
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/oov/400/unprompted_'
+freq_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/oov/train_freq/train_400/'
+temp_lst = ['0.3', '0.6', '1.0', '1.5']
+num_bins = 20
+set_type = 'ood'
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/oov/'
+mode = 'quantity'
 
-
+plot_oov(root_path,freq_path,temp_lst,fig_dir,mode,set_type)

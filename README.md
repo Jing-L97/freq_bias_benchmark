@@ -16,6 +16,7 @@ pip install .
 
 
 ## Data preparation
+To prepare for analyzing the data
 segment utterances in train data for generation
 
 ```bash
@@ -26,7 +27,15 @@ python prepare_generation.py
 ### autoregressive model
 LSTM: next token prediction, adapted from [Lexical-benchmark](https://github.com/Jing-L97/Lexical-benchmark)
 
+
+
+
 ## Results analysis
+We analyze the generated sets in following aspects:
+- Lexical diversity: evaluated on Distinct-n and self-BLEU following (https://arxiv.org/pdf/2311.09807)
+
+
+
 
 ### gather descriptive freq in train and genration set
 ```bash
