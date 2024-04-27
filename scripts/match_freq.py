@@ -72,10 +72,6 @@ def match_ngrams(ref_count,test_count):
 
 
 
-temp_lst = ['0.3','0.6','1.0','1.5']
-
-
-
 def main(argv):
 
     # load args
@@ -92,29 +88,19 @@ def main(argv):
     if test_set != 'gen':
         test_utt = pd.read_csv(ref_path)['content']
         test_count = count_ngrams(test_utt, ngram)
+        match_ngrams(ref_count, test_count)
 
     # merge the word list
-    elif test_type != 'gen':
-    # go over the train and gen freq df
-    for header in header_lst:
-        gen_freq = pd.read_csv(folder_path + 'unprompted_' + temp + '_400.csv', usecols=['Word','Log_norm_freq_per_million'])
-        gen_freq['Word'] = gen_freq['Word'].astype(str)
-        # Perform the join and fill missing values with 0
-        # Merge the data frames
-        result = pd.merge(df1, df2, on='Common_Column', how='outer', suffixes=('_df1', '_df2')).fillna(0)
-        # Add a new column based on conditions
-        result['Overlap'] = 'inv'
-        result.loc[result['Value_df1'] == 0, 'Overlap'] = 'ooh'
-        result.loc[result['Value_df2'] == 0, 'Overlap'] = 'missing'
-
-    # get the count respectively
+    elif test_set != 'gen':
+        # go over the train and gen freq df
+        temp_lst = ['0.3', '0.6', '1.0', '1.5']
+        gen_freq = pd.read_csv(test_path)
+        for temp in temp_lst:
+            test_utt = gen_freq['unprompted_' + temp]
+            test_count = count_ngrams(test_utt, ngram)
+            match_ngrams(ref_count, test_count)
 
 
-    # get the word type: inv, oov, missing
-
-
-
-    # store the count file
 
 
 
