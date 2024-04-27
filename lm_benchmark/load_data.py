@@ -7,6 +7,15 @@ import numpy as np
 import string
 import re
 from tqdm import tqdm
+from nltk.util import ngrams
+
+
+def extract_ngrams(words:list, n:int):
+    """Generate n-grams from a list of words"""
+    n_grams = list(ngrams(words, n))
+    # convert tuple into a string
+    output = [' '.join(map(str, t)) for t in n_grams]
+    return output
 
 def clean_text(loaded:list):
     """

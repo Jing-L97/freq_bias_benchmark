@@ -14,6 +14,9 @@ conda install python pip
 pip install .
 ```
 
+## Folder structure
+
+
 
 ## Data preparation
 To prepare for analyzing the data

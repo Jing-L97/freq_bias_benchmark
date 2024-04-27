@@ -1,5 +1,5 @@
 """
-detect n-gram in the generated tokens
+count n-grams of the given dataset
 """
 
 from nltk.util import ngrams
@@ -53,6 +53,9 @@ def get_freq(text_path:str, out_dir:str,column_list:list,n_gram:int):
                 text_lst = extract_ngrams(gen, n_gram)
                 freq = get_ngram_freq(text_lst,True)   # problem here!
                 freq.to_csv(out_path + col + '_' + file)
+
+
+                
 n_gram_lst = [3,4,5]
 for n_gram in n_gram_lst:
     get_freq(text_path, out_dir,column_list,n_gram)
