@@ -1,10 +1,9 @@
 """get and match count between the reference and the comparison corpora"""
 import argparse
-import collections
 import os
 import sys
 import pandas as pd
-from nltk.util import ngrams
+from lm_benchmark.count_util import count_ngrams
 
 def parseArgs(argv):
     # Run parameters
@@ -16,13 +15,14 @@ def parseArgs(argv):
     parser.add_argument('--model', type=str, default='400',
                         help='model name')
 
-    parser.add_argument('--test_set', type=str, default='gen',
+    parser.add_argument('--test_set', type=str, default='ood',
                         help='which type of words to select; recep or exp')
 
     parser.add_argument('--ngram', type=int, default=1,
                         help='ngram to extract')
 
     return parser.parse_args(argv)
+
 
 
 def get_score(train_freq, gen_freq):
@@ -36,36 +36,6 @@ def get_score(train_freq, gen_freq):
     elif gen_freq < train_freq:
         return -1
 
-
-def extract_ngrams(words:list, n:int):
-    """Generate n-grams from a list of words"""
-    n_grams = list(ngrams(words, n))
-    # convert tuple into a string
-    output = [' '.join(map(str, t)) for t in n_grams]
-    return output
-
-def lowercase_text(text):
-    try:
-        return text.lower()
-    except:
-        return text
-
-def count_ngrams(col, n:int):
-    """count n-grams from a list of words"""
-    # preprocess of the utt
-    sentences = col.apply(lowercase_text).tolist() # lower the tokens
-    # Convert list of sentences into a single list of words
-    word_lst = [word for sentence in sentences for word in str(sentence).split()]
-    # extract ngrams
-    ngrams = extract_ngrams(word_lst, n)
-    # get freq
-    frequencyDict = collections.Counter(ngrams)
-    freq_lst = list(frequencyDict.values())
-    word_lst = list(frequencyDict.keys())
-    fre_table = pd.DataFrame([word_lst, freq_lst]).T
-    col_Names = ["Word", "Count"]
-    fre_table.columns = col_Names
-    return fre_table
 
 
 def match_ngrams(ref_count,test_count):
@@ -105,8 +75,7 @@ def main(argv):
     # merge the word list
     elif test_set == 'gen':
         # go over the train and gen freq df
-        #temp_lst = ['0.3', '0.6', '1.0', '1.5']
-        temp_lst = ['0.3']
+        temp_lst = ['0.3','0.6', '1.0', '1.5']
         gen_freq = pd.read_csv(test_path)
         for temp in temp_lst:
             test_utt = gen_freq['unprompted_' + temp]
