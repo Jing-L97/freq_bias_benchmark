@@ -121,4 +121,4 @@ def accu_model_tok_stats(token_count,ref_corpus_size,gen_corpus_size=None):
     pless=p_obs_less_than_k(gen_token_count,prob_token,gen_corpus_size)
     pmore=1-psame-pless
     score=pless*-1+pmore
-    return {'p_miss':pmiss,'p_once':ponce,'p_same':psame,'p_less':pless,'p_more':pmore,'score':score}
+    return {'p_miss':pmiss,'p_once':ponce,'p_same':psame,'p_less':pless,'p_more':pmore,'Score':score}

@@ -15,7 +15,7 @@ def parseArgs(argv):
     parser.add_argument('--model', type=str, default='400',
                         help='model name')
 
-    parser.add_argument('--test_set', type=str, default='ood',
+    parser.add_argument('--test_set', type=str, default='ind',
                         help='which type of words to select; recep or exp')
 
     parser.add_argument('--ngram', type=int, default=1,
@@ -67,7 +67,7 @@ def main(argv):
     # count ngrams
     ref_count = count_ngrams(ref_utt, ngram)
     if test_set != 'gen':
-        test_utt = pd.read_csv(ref_path)['train']
+        test_utt = pd.read_csv(test_path)['content']
         test_count = count_ngrams(test_utt, ngram)
         merged_count = match_ngrams(ref_count, test_count)
         merged_count.to_csv(out_path + test_set + '.csv')

@@ -59,9 +59,6 @@ def get_equal_quantity(data_frame, col_header:str, n_bins:int):
         bins: array with each bin boundary
         data_frame: updated df with an additional column of group
     '''
-    # sort the dataframe
-    data_frame[col_header] = data_frame[col_header].astype(float)
-    data_frame = data_frame.sort_values(by=[col_header])
     data = data_frame[col_header]
     # preparing data (adding small jitter to remove ties)
     size = len(data)
@@ -76,7 +73,6 @@ def get_equal_quantity(data_frame, col_header:str, n_bins:int):
     bins = [data_sorted[0]]  # left edge inclusive
     bins = np.append(bins, [(data_sorted[int(b)] + data_sorted[int(b + 1)]) / 2 for b in bin_indices[1:-1]])
     bins = np.append(bins, data_sorted[-1] + jitter)  # this is because the extreme right edge is inclusive in plt.hits
-
     # computing bin membership for the original data; append bin membership to stat
     bin_membership = np.zeros(size, dtype=int)
     for i in range(0, len(bins) - 1):
@@ -104,9 +100,7 @@ def get_equal_range(data_frame, col_header:str, n_bins:int):
         bins: array with each bin boundary
         data_frame: updated df with an additional column of group
     '''
-    # sort the dataframe
-    data_frame[col_header] = data_frame[col_header].astype(float)
-    data_frame = data_frame.sort_values(by=[col_header])
+
     # Determine the range of the column
     min_val = data_frame[col_header].min()
     max_val = data_frame[col_header].max()
@@ -128,28 +122,20 @@ def get_equal_range(data_frame, col_header:str, n_bins:int):
     return data_frame_all
 
 
-
-
-def load_data(freq_path,y_header,max_freq,mode, num_bins):
-    """
-    load data to plot figures
-    mode: quantity(equal number og points )
-    """
-    freq_frame = pd.read_csv(freq_path)
-
-    freq_frame['Log_norm_freq_per_million'] = freq_frame['Log_norm_freq_per_million'].astype(float)
+def load_data(freq_frame,y_header,mode,num_bins):
+    """bin data """
     freq_frame[y_header] = freq_frame[y_header].astype(float)
-
+    freq_frame = freq_frame.sort_values(by=[y_header])
     # bin the data to plot trends
     if mode == 'quantity':
-        freq_frame = get_equal_quantity(freq_frame,'Log_norm_freq_per_million', num_bins)
+        freq_frame = get_equal_quantity(freq_frame,y_header, num_bins)
     elif mode == 'range':
-        freq_frame = get_equal_range(freq_frame,'Log_norm_freq_per_million', num_bins)
-
-    binned_freq_frame = freq_frame.groupby('group').agg({'Log_norm_freq_per_million': 'mean',
-                                                      y_header: 'mean'})
-    max_freq.append(freq_frame['Log_norm_freq_per_million'].max())
-    return freq_frame,binned_freq_frame,max_freq
+        freq_frame = get_equal_range(freq_frame,y_header, num_bins)
+    # sort the data just to be sure
+    freq_frame = freq_frame.sort_values(by=[y_header])
+    return freq_frame
 
 
+
+# TODO: get stat of the binned data: extract from the lexical benchmark
 

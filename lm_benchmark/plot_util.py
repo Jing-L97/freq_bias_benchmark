@@ -1,38 +1,54 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-plot different figures recursively
+util func to plot all the figures
 @author: jliu
 '''
 
-import argparse
 import math
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import seaborn as sns
-import sys
-from lm_benchmark.load_data import load_data
-from lm_benchmark.plot_util import plot_line, plot_scatter
+from lm_benchmark.load_data import get_equal_range,load_data
 import numpy as np
 sns.set_style('whitegrid')
 
-def parseArgs(argv):
-    # Run parameters
-    parser = argparse.ArgumentParser(description='Select test sets by freq')
 
-    parser.add_argument('--root_path', type=str, default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/',
-                        help='root path to the utterance and freq dir')
-    parser.add_argument('--model', type=str, default='400',
-                        help='model name')
-    parser.add_argument('--ngram', type=int, default=1,
-                        help='ngram to extract')
-    parser.add_argument('--mode', type=str, default='quantity',
-                        help='which type of words to select; recep or exp')
-    parser.add_argument('--plot_type', type=str, default='scatter',
-                        help='which type of words to select; recep or exp')
-    return parser.parse_args(argv)
+def plot_line(df,x_header:str,y_header:str,label:str,title:str):
+    """plot freq score of gen-train comparison"""
+    # Plot the line connecting the means
+    grouped = df.groupby('group').agg({x_header: 'mean', y_header: 'mean'})
+    # Reset index to make 'Group' a column again
+    grouped.reset_index(inplace=True)
+    # Plot the line connecting the means
+    plt.plot(grouped[x_header], grouped[y_header], marker='o',linestyle='-',label = label)
+    '''
+    for index, row in grouped.iterrows():
+        group_data = df[df['group'] == row['group']]
+        plt.errorbar(x=row[x_header], y=row[y_header], yerr=group_data[y_header].std())
+    '''
+    plt.title(title + ' as a function of Token Count')  # Title of the plot
+    plt.xlabel('Token Count (in reference corpus)')  # Label for the x-axis
+    plt.ylabel(title)  # Label for the y-axis
+    plt.grid(True)  # Show grid lines
+    plt.xscale("log")
 
+
+
+
+def plot_scatter(ref_counts, gen_counts,label:str):
+    # display a scatterplot of log count generated versus log count in the reference corpus
+    plt.figure(figsize=(10, 10))
+    plt.scatter(ref_counts, gen_counts)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.plot([0, max(ref_counts)], [0, max(ref_counts)], 'r-')
+    # Adding title and labels
+    plt.title('Scatter Plot for generated/reference token counts in ' + label + ' corpus')
+    plt.xlabel('Reference token counts ')
+    plt.ylabel('Generated token counts')
+    plt.show()
 
 def missing_prob(df):
     """plot prop of missing words in each group"""
@@ -48,103 +64,24 @@ def missing_prob(df):
 
 
 
-def plot_score(df,x_header:str, mode:str, num_bins:int,file:str):
-    """plot freq score of the reference and test corpora"""
-    df = df[df['Type'] != 'oov']     # use the whole reference corpus
-    # select non-oov words
-    freq_frame = load_data(df, x_header, mode, num_bins)
-    y_header = 'Score'
-    title = 'Freq Score'
-    plot_line(freq_frame, x_header, y_header, file[:-4], title)
-    plt.ylim(-1, 1)
 
 
 
-
-def plot_freq(df,x_header:str, mode:str, num_bins:int,file:str,max_freq:list):
-    """plot freq of the reference and test corpora"""
-    y_header = 'Count_test'
-    df = df[df['Type'] == 'inv']
-    # select inv words
-    freq_frame = load_data(df, x_header, mode, num_bins)
-    title = 'Generation Token Count'
-    plot_line(freq_frame, x_header, y_header, file[:-4], title)
+def freq_scatter(ref_counts, gen_counts,label:str):
+    # display a scatterplot of log count generated versus log count in the reference corpus
+    plt.figure(figsize=(10, 10))
+    plt.scatter(ref_counts, gen_counts)
+    plt.xscale("log")
     plt.yscale("log")
-    max_freq.append(df['Count_test'].max())
-    max_freq.append(df['Count_ref'].max())
-
-def plot_freq_scatter(df,fig_path:str,file:str):
-    """plot freq scatter points of the reference and test corpora"""
-    df = df[df['Type'] == 'inv']
-    # select inv words
-    plot_scatter(df['Count_ref'], df['Count_test'], file[:-4])
-    plt.savefig(fig_path + 'scatter_' + file[:-4] + '.png', dpi=800)
-
-
-def main(argv):
-    # load args
-    args = parseArgs(argv)
-    ngram = args.ngram
-    out_path = args.root_path + 'freq/' + args.model + '/' + str(ngram) + '_gram/'
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
-
-
-    root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/'
-    model = '400'
-    ngram = 1
-    freq_path = root_path + 'freq' + '/' + model + '/' + str(ngram) + '_gram/'
-    fig_path = root_path + 'fig' + '/' + model + '/' + str(ngram) + '_gram/'
-    x_header = 'Count_ref'
-    num_bins = 20
-    mode = 'quantity'
-    plot_type = 'scatter'
-
-    plt.clf()    # TODO: remove later
-    max_freq = []
-    for file in os.listdir(freq_path):
-        if file.endswith('csv'):
-            try:
-                df = pd.read_csv(freq_path + file)
-                if plot_type == 'score':
-                    plot_score(df, x_header, mode, num_bins, file)
-
-                elif plot_type == 'freq':      # the accum model will be passed due to the missing test corpus
-                    plot_freq(df, x_header, mode, num_bins, file,max_freq)
-
-                elif plot_type == 'scatter':
-                    plot_freq_scatter(df, fig_path, file)
-
-                elif plot_type == 'missing':
-                    # segment into groups
-                    freq_frame = load_data(df, x_header, mode, num_bins)
-                    if not file.startswith('accum'):
-                        # loop over different groups; y header is the prop
-
-                    if file.startswith('accum'): # Accum: plot the avg missing prob
-                        plot_line(freq_frame, 'Count_ref', 'p_miss', file[:-4], 'p_miss')
-
-
-            except:
-                print(file)
-
-    if plot_type == 'score':
-        plt.axhline(y=0, color='red', linewidth=3.5, linestyle='--', label='y = 0')
-    elif plot_type == 'freq':
-        plt.plot([0, max(max_freq)], [0, max(max_freq)], linewidth=3.5, color='red', linestyle='--')
-
-    plt.legend()
-    # save the fig
-    plt.savefig(fig_path + plot_type + '.png', dpi=800)
+    plt.plot([0, max(ref_counts)], [0, max(ref_counts)], 'r-')
+    # Adding title and labels
+    plt.title('Scatter Plot for generated/reference token counts in ' + label + ' corpus')
+    plt.xlabel('Reference token counts ')
+    plt.ylabel('Generated token counts')
+    plt.show()
 
 
 
-
-
-
-if __name__ == "__main__":
-    args = sys.argv[1:]
-    main(args)
 
 
 
@@ -261,6 +198,33 @@ def plot_distr(data:list,temp:str,num_bins:int,mode:str):
 
     plt.legend()
 
+
+
+def plot_missing_freq(root_path:str,temp_lst:list,fig_dir:str,mode:str):
+    """plot missing words in the train set"""
+    all_freq = pd.read_csv(root_path)
+    # select the missing words in differnt temp
+    for temp in temp_lst:
+        selected_freq = all_freq[all_freq[temp + '_Log_norm_freq_per_million'] == -5000]
+        # plot the corresponding distr
+        plot_distr(selected_freq['Log_norm_freq_per_million'],temp,num_bins,mode)
+    # Add labels and title
+    plt.xlabel('Log_norm_freq_per_million in train set', fontsize=12, fontweight='bold')
+    plt.ylabel('Missing words Count', fontsize=12, fontweight='bold')
+    plt.title('Missing words freq distribution in train set', fontsize=15, fontweight='bold')
+    plt.xlim(-1, 4.5)
+    # Set figure size
+    plt.gcf().set_size_inches(10, 4)
+    plt.savefig(fig_dir + mode +'.png', dpi=800)
+    plt.clf()
+
+# select the missing words in different temp
+root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/1_gram/matched.csv'
+temp_lst = ['0.3', '0.6', '1.0', '1.5']
+num_bins = 20
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/missing_words/'
+mode = 'quantity'
+plot_missing_freq(root_path,temp_lst,fig_dir,mode)
 
 def plot_oov(root_path:str,freq_path:str,temp_lst:list,fig_dir:str,mode:str,set_type:str):
     """plot the oov words freq in the generation set"""
