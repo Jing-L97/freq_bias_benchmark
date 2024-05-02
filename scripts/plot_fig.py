@@ -13,8 +13,7 @@ import pandas as pd
 import seaborn as sns
 import sys
 from lm_benchmark.load_data import load_data
-from lm_benchmark.plot_util import plot_line, plot_scatter
-import numpy as np
+from lm_benchmark.plot_util import plot_line, plot_scatter, get_oov
 sns.set_style('whitegrid')
 
 def parseArgs(argv):
@@ -25,27 +24,40 @@ def parseArgs(argv):
                         help='root path to the utterance and freq dir')
     parser.add_argument('--model', type=str, default='400',
                         help='model name')
-    parser.add_argument('--ngram', type=int, default=1,
+    parser.add_argument('--ngram', type=int, default=4,
                         help='ngram to extract')
     parser.add_argument('--mode', type=str, default='quantity',
                         help='which type of words to select; recep or exp')
-    parser.add_argument('--plot_type', type=str, default='scatter',
+    parser.add_argument('--plot_type', type=str, default='missing',
                         help='which type of words to select; recep or exp')
+    parser.add_argument('--oov_mode', type=str, default='type',
+                        help='which type of oov to plot; type or token')
+    parser.add_argument('--num_bins', type=int, default=20,
+                        help='which type of oov to plot; type or token')
     return parser.parse_args(argv)
 
 
-def missing_prob(df):
-    """plot prop of missing words in each group"""
-    plt.figure(figsize=(10, 5))  # Set the size of the plot
-    plt.plot(df['Count_ref'], df['p_miss'], label='p_miss', color='blue')  # Plot the data
-    plt.title('prob of missing as a function of Token Count for the accumulator model')  # Title of the plot
-    plt.xlabel('Token Count (in ref corpus)')  # Label for the x-axis
-    plt.ylabel('Probability of missing (in gen corpus)')  # Label for the y-axis
-    plt.ylim(0, 1)
-    plt.xscale("log")
-    plt.grid(True)  # Show grid lines
-    plt.legend()  # Show legend
+def plot_missing(df,x_header:str, mode:str, num_bins:int,file:str):
+    """plot prop/prob of missing words in each group"""
+    # segment into groups
+    df = df[df['Type'] != 'oov']
+    freq_frame = load_data(df, x_header, mode, num_bins)
+    if file.startswith('accum'):
+        frame_all = freq_frame
+    if not file.startswith('accum'):
+        # append the prop column for each bin
+        freq_framed = freq_frame.groupby('group')
+        # loop and get prop
+        frame_all = pd.DataFrame()
+        for _, freq_group in freq_framed:
+            prop = freq_group[freq_group['Type'] == 'missing'].shape[0] / freq_group.shape[0]
+            # append the results
+            freq_group['p_miss'] = prop
+            # return the new freq_frame with the appended prop columnn
+            frame_all = pd.concat([frame_all, freq_group])
 
+    y_header = 'p_miss'
+    plot_line(frame_all, x_header, y_header, file[:-4], 'p_miss')
 
 
 def plot_score(df,x_header:str, mode:str, num_bins:int,file:str):
@@ -57,8 +69,6 @@ def plot_score(df,x_header:str, mode:str, num_bins:int,file:str):
     title = 'Freq Score'
     plot_line(freq_frame, x_header, y_header, file[:-4], title)
     plt.ylim(-1, 1)
-
-
 
 
 def plot_freq(df,x_header:str, mode:str, num_bins:int,file:str,max_freq:list):
@@ -81,71 +91,22 @@ def plot_freq_scatter(df,fig_path:str,file:str):
     plt.savefig(fig_path + 'scatter_' + file[:-4] + '.png', dpi=800)
 
 
-def main(argv):
-    # load args
-    args = parseArgs(argv)
-    ngram = args.ngram
-    out_path = args.root_path + 'freq/' + args.model + '/' + str(ngram) + '_gram/'
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
 
-
-    root_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/'
-    model = '400'
-    ngram = 1
-    freq_path = root_path + 'freq' + '/' + model + '/' + str(ngram) + '_gram/'
-    fig_path = root_path + 'fig' + '/' + model + '/' + str(ngram) + '_gram/'
-    x_header = 'Count_ref'
-    num_bins = 20
-    mode = 'quantity'
-    plot_type = 'scatter'
-
-    plt.clf()    # TODO: remove later
-    max_freq = []
-    for file in os.listdir(freq_path):
-        if file.endswith('csv'):
-            try:
-                df = pd.read_csv(freq_path + file)
-                if plot_type == 'score':
-                    plot_score(df, x_header, mode, num_bins, file)
-
-                elif plot_type == 'freq':      # the accum model will be passed due to the missing test corpus
-                    plot_freq(df, x_header, mode, num_bins, file,max_freq)
-
-                elif plot_type == 'scatter':
-                    plot_freq_scatter(df, fig_path, file)
-
-                elif plot_type == 'missing':
-                    # segment into groups
-                    freq_frame = load_data(df, x_header, mode, num_bins)
-                    if not file.startswith('accum'):
-                        # loop over different groups; y header is the prop
-
-                    if file.startswith('accum'): # Accum: plot the avg missing prob
-                        plot_line(freq_frame, 'Count_ref', 'p_miss', file[:-4], 'p_miss')
-
-
-            except:
-                print(file)
-
-    if plot_type == 'score':
-        plt.axhline(y=0, color='red', linewidth=3.5, linestyle='--', label='y = 0')
-    elif plot_type == 'freq':
-        plt.plot([0, max(max_freq)], [0, max(max_freq)], linewidth=3.5, color='red', linestyle='--')
-
-    plt.legend()
-    # save the fig
-    plt.savefig(fig_path + plot_type + '.png', dpi=800)
-
-
-
-
-
-
-if __name__ == "__main__":
-    args = sys.argv[1:]
-    main(args)
-
+def plot_oov(data:dict,oov_mode:str,fig_path:str):
+    # Sort the dictionary based on the given order
+    given_order = ['ind', 'ood', 'gen_0.3', 'gen_0.6', 'gen_1.0', 'gen_1.5']
+    sorted_data = {key: data[key] for key in given_order}
+    # Extract x and y values from the sorted dictionary
+    x_values = list(sorted_data.keys())
+    y_values = list(sorted_data.values())
+    # Plotting
+    plt.plot(x_values, y_values, marker='o')
+    plt.xlabel('Test sets', fontsize=12, fontweight='bold')
+    plt.ylabel('Prop of oov ' + oov_mode, fontsize=12, fontweight='bold')
+    plt.title('Prop of oov ' + oov_mode + ' in different test sets', fontsize=15, fontweight='bold')
+    plt.ylim(0, 1)
+    plt.grid(True)
+    plt.savefig(fig_path + 'oov_' + oov_mode +'.png', dpi=800)
 
 
 
@@ -225,6 +186,7 @@ def plot_distinct_n(input_root,fig_dir,n_gram,model_type):
     plt.savefig(plot_dir + str(model_type) + '.png', dpi=800)
 
 
+'''
 
 # plot ttr
 model_type = '400'
@@ -237,29 +199,10 @@ for n_gram in n_gram_lst:
     #plot_distinct_n(input_root, fig_dir, n_gram, model_type)
     compare_zipf(input_root, fig_dir, n_gram, model_type)
 
-def plot_distr(data:list,temp:str,num_bins:int,mode:str):
-    """plot distr of selected words"""
-    # Plot the number distribution
-    data = sorted(data)
-    # Compute histogram
-    if mode == 'range':
 
-        counts, bin_edges = np.histogram(data, bins=num_bins, range=(min(data), max(data) + 1))
-        # Plot the curve
-        plt.plot(bin_edges[:-1], counts, marker='o', linestyle='-',label = temp)
+'''
 
-    elif mode == 'quantity':
-        '''
-        bins = pd.qcut(data, q=num_bins, duplicates='drop', labels=False)
-        bin_counts = np.bincount(bins)
-        # Plot the histogram
-        plt.plot(range(len(bin_counts)), bin_counts, marker='o', linestyle='-', label=temp)
-        '''
-        counts, bin_edges = np.histogram(data, bins=num_bins)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Compute bin centers
-        plt.plot(bin_centers, counts, marker='o', linestyle='-', label=temp)
 
-    plt.legend()
 
 
 def plot_oov(root_path:str,freq_path:str,temp_lst:list,fig_dir:str,mode:str,set_type:str):
@@ -285,6 +228,68 @@ def plot_oov(root_path:str,freq_path:str,temp_lst:list,fig_dir:str,mode:str,set_
     plt.gcf().set_size_inches(10, 4)
     plt.savefig(fig_dir + set_type + '_' + mode +'.png', dpi=800)
     plt.clf()
+
+
+
+def main(argv):
+    # load args
+    args = parseArgs(argv)
+    ngram = args.ngram
+    oov_mode = args.oov_mode
+    model = args.model
+    freq_path = args.root_path + 'freq' + '/' + model + '/' + str(ngram) + '_gram/'
+    fig_path = args.root_path + 'fig' + '/' + model + '/' + str(ngram) + '_gram/'
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
+    x_header = 'Count_ref'
+    num_bins = args.num_bins
+    mode = args.mode
+    plot_type = args.plot_type
+
+    plt.clf()
+    max_freq = []
+    prop_dict = {}
+    for file in os.listdir(freq_path):
+        if file.endswith('csv'):
+            try:
+                df = pd.read_csv(freq_path + file)
+                if plot_type == 'score':
+                    plot_score(df, x_header, mode, num_bins, file)
+
+                elif plot_type == 'freq':      # the accum model will be passed due to the missing test corpus
+                    plot_freq(df, x_header, mode, num_bins, file,max_freq)
+
+                elif plot_type == 'scatter':
+                    plot_freq_scatter(df, fig_path, file)
+
+                elif plot_type == 'missing':
+                    plot_missing(df, x_header, mode, num_bins, file)
+
+                elif plot_type == 'oov':    # get oov type prop num from each
+                    prop_dict[file[:-4]] = get_oov(df,oov_mode)
+            except:
+                print(file)
+
+    if plot_type == 'score':
+        plt.axhline(y=0, color='red', linewidth=3.5, linestyle='--', label='y = 0')
+    elif plot_type == 'freq':
+        plt.plot([0, max(max_freq)], [0, max(max_freq)], linewidth=3.5, color='red', linestyle='--')
+    elif plot_type == 'oov':
+        plot_oov(prop_dict,oov_mode,fig_path)
+    plt.legend()
+    # save the fig
+    if not plot_type == 'oov':
+        plt.savefig(fig_path + plot_type + '.png', dpi=800)
+
+
+
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    main(args)
+
+
 
 
 

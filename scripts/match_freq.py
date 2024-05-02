@@ -16,9 +16,9 @@ def parseArgs(argv):
                         help='model name')
 
     parser.add_argument('--test_set', type=str, default='ind',
-                        help='which type of words to select; recep or exp')
+                        help='ind,ood or gen')
 
-    parser.add_argument('--ngram', type=int, default=1,
+    parser.add_argument('--ngram', type=int, default=4,
                         help='ngram to extract')
 
     return parser.parse_args(argv)

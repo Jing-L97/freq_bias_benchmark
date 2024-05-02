@@ -14,7 +14,7 @@ def parseArgs(argv):
                         help='root path to the utterance and freq dir')
     parser.add_argument('--model', type=str, default='400',
                         help='model name')
-    parser.add_argument('--ngram', type=int, default=1,
+    parser.add_argument('--ngram', type=int, default=5,
                         help='ngram to extract')
     return parser.parse_args(argv)
 
