@@ -93,6 +93,8 @@ def plot_freq_scatter(df,fig_path:str,file:str):
 
 
 def plot_oov(data:dict,oov_mode:str,fig_path:str):
+    # loop both type and ratios
+
     # Sort the dictionary based on the given order
     given_order = ['ind', 'ood', 'gen_0.3', 'gen_0.6', 'gen_1.0', 'gen_1.5']
     sorted_data = {key: data[key] for key in given_order}
@@ -107,23 +109,6 @@ def plot_oov(data:dict,oov_mode:str,fig_path:str):
     plt.ylim(0, 1)
     plt.grid(True)
     plt.savefig(fig_path + 'oov_' + oov_mode +'.png', dpi=800)
-
-
-
-'''
-
-# plot ttr
-model_type = '400'
-input_root = ('/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/')
-fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
-n_gram_lst = [1,2,3,4,5]
-#n_gram_lst = [2]
-for n_gram in n_gram_lst:
-    #plot_distinct_n(input_root, fig_dir, n_gram, model_type)
-    compare_zipf(input_root, fig_dir, n_gram, model_type)
-
-
-'''
 
 
 

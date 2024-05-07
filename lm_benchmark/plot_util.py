@@ -5,9 +5,11 @@ util func to plot all the figures
 @author: jliu
 '''
 import matplotlib.pyplot as plt
+import os
 import seaborn as sns
 import enchant
-d = enchant.Dict("en")
+d_uk = enchant.Dict("en_UK")
+d_us = enchant.Dict("en_US")
 
 sns.set_style('whitegrid')
 color_dict = {'accum':'Orange','ind':'Pink','ood':'Blue','gen_0.3':'Green'
@@ -48,10 +50,16 @@ def plot_scatter(ref_counts, gen_counts,label:str):
     plt.ylabel('Generated token counts', fontsize=12, fontweight='bold')
     plt.show()
 
+
 def is_word(word):
+
+    true_word = ["cant", "wont", "dont", "isnt", "its", "im", "hes", "shes", "theyre", "were", "youre", "lets", "wasnt", "werent", "havent", "ill", "youll", "hell", "shell", "well", "theyll", "ive", "youve", "weve", "theyve", "shouldnt", "couldnt", "wouldnt", "mightnt", "mustnt", "thats", "whos", "whats", "wheres", "whens", "whys", "hows", "theres", "heres", "lets", "wholl", "whatll", "whod", "whatd", "whered", "howd", "thatll", "whatre", "therell", "herell"]
     # Function to check if a word is valid
     try:
-        return d.check(word)
+        if d_uk.check(word) or d_us.check(word) or d_us.check(word.capitalize()) or d_uk.check(word.capitalize()) or word in true_word:
+            return True
+        else:
+            return False
     except:
         return False
 
@@ -59,11 +67,16 @@ def get_oov(df):
     """load oov prop of the reference and test corpora"""
     type_prop = df[df['Type'] == 'oov'].shape[0] / df.shape[0]
     token_prop = df[df['Type'] == 'oov']['Count_test'].sum() / df['Count_test'].sum()
-    true_type_prop =
-    false_type_prop =
-    return type_prop,token_prop,true_prop,false_prop
+    return type_prop,token_prop
 
 
+def get_nonwords(df):
+    """load nonword prop of test corpora"""
+    df = df[df['Type'] == 'oov']
+    df['TrueWord'] = df['Word'].apply(is_word)
+    type_prop = df[df['TrueWord'] == False].shape[0] / df.shape[0]
+    token_prop = df[df['TrueWord'] == False]['Count_test'].sum() / df['Count_test'].sum()
+    return type_prop,token_prop
 
 
 
@@ -143,8 +156,18 @@ def plot_distinct_n(input_root,fig_dir,n_gram,model_type):
     plt.savefig(plot_dir + str(model_type) + '.png', dpi=800)
 
 
+'''
+
+# plot ttr
+model_type = '400'
+input_root = ('/Users/jliu/PycharmProjects/freq_bias_benchmark/data/generation/gen_freq/inv/400/')
+fig_dir = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/'
+n_gram_lst = [1,2,3,4,5]
+#n_gram_lst = [2]
+for n_gram in n_gram_lst:
+    #plot_distinct_n(input_root, fig_dir, n_gram, model_type)
+    compare_zipf(input_root, fig_dir, n_gram, model_type)
 
 
-
-
+'''
 
