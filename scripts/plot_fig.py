@@ -6,7 +6,6 @@ plot different figures recursively
 '''
 
 import argparse
-import math
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
