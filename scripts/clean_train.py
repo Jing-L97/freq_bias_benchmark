@@ -130,8 +130,12 @@ def main(argv):
             all_frame.to_csv(utt_path + file)
             print(f"Finish prepare utt for {file}")
 
+            out_path = mat_path + file[:-4]
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+
             # Open the file in write mode
-            with open(mat_path + file[:-4] + '.txt', 'w') as f:
+            with open(out_path + '/data.txt', 'w') as f:
                 # Write each element of the list to the file
                 for item in train:
                     f.write('%s\n' % item)

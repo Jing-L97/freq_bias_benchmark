@@ -48,6 +48,7 @@ for file in os.listdir(root_path):
         nonword_dict[file] = nonword_type, nonword_ratio
 
 
+# change the file structure
 
 
 
