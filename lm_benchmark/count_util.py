@@ -2,11 +2,11 @@
 func to count different chunks
 """
 import collections
-import spacy
+#import spacy
 import pandas as pd
 from nltk.util import ngrams
 
-nlp = spacy.load("en_core_web_sm")
+#nlp = spacy.load("en_core_web_sm")
 
 
 def count_NER(text):
@@ -44,10 +44,10 @@ def lowercase_text(text):
     except:
         return text
 
-def count_ngrams(col, n:int):
+def count_ngrams(sentences, n:int):
     """count n-grams from a list of words"""
     # preprocess of the utt
-    sentences = col.apply(lowercase_text).tolist() # lower the tokens
+    #sentences = col.apply(lowercase_text).tolist() # lower the tokens
     # Convert list of sentences into a single list of words
     word_lst = [word for sentence in sentences for word in str(sentence).split()]
     # extract ngrams
