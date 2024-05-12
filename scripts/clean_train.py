@@ -74,7 +74,6 @@ def preprocess(raw:list):
         for word in word_lst:
             upper_char = ' '.join(word).upper()
             if not word.isspace():
-                # clean_with = upper_char + " | "
                 processed_with += upper_char + " | "
                 processed_without += upper_char + " "
 
