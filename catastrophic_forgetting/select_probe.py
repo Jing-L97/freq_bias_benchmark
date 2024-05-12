@@ -10,7 +10,7 @@ def parseArgs(argv):
     # Run parameters
     parser = argparse.ArgumentParser(description='Select test sets by freq')
 
-    parser.add_argument('--root_path', type=str, default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/batch/1600_large/',
+    parser.add_argument('--root_path', type=str, default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/batch/100_large/',
                         help='root path to the utterance and freq dir')
     return parser.parse_args(argv)
 
@@ -52,7 +52,7 @@ def select_probe_set(root_path):
 
     # Iterate over batches (T-1, T, T+1) recursively
     stat_lst = []
-    for i in range(1, len(files) - 1):
+    for i in tqdm(range(1, len(files) - 1)):
         # Load word count CSV files for batches T-1, T, T+1
         csv_files = [os.path.join(root_path + 'freq/', files[j]) for j in range(i - 1, i + 2)]
         dfs = [pd.read_csv(csv_file) for csv_file in csv_files]
