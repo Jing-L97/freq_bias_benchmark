@@ -37,7 +37,7 @@ def load_loss(log_file):
     return dict(sorted(train_losses.items())), dict(sorted(valid_losses.items()))
 
 # Path to the result.log file
-log_file = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/model/100.log'
+log_file = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/model/400.log'
 fig_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/loss/'
 # Read loss values from the log file
 train_losses, valid_losses = load_loss(log_file)
