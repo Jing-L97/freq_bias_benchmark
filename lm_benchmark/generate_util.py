@@ -78,36 +78,26 @@ def top_p(scaled_logits,p,gpu):
         softmax_output = torch.nn.functional.softmax(scaled_logits, dim=-1).cuda()
         
     else:
-        softmax_output = torch.nn.functional.softmax(scaled_logits, dim=-1)    
-        
-    
+        softmax_output = torch.nn.functional.softmax(scaled_logits, dim=-1)
         
     # Sort the probabilities and indices in descending order
     sorted_probs, sorted_indices = torch.sort(softmax_output, descending=True, dim=-1)
-    
     # Calculate cumulative probabilities
     cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
-    
-    # Getthe smallest set of tokens whose cumulative probability exceeds threshold p
+    # Get the smallest set of tokens whose cumulative probability exceeds threshold p
     cutoff_index = torch.where(cumulative_probs > p)[-1][0] + 1
-    
     top_p_probs = sorted_probs[:, :, :cutoff_index]
-    
     rescaled_probabilities = top_p_probs / top_p_probs.sum(dim=-1, keepdim=True)
     
-    
-    if gpu:  
-        
+    if gpu:
         # Perform random sampling among the top-p tokens
         sampled_index = torch.multinomial(rescaled_probabilities[0][-1], num_samples=1).cuda()
-    
-    
+
     else:
         
         # Perform random sampling among the top-p tokens
         sampled_index = torch.multinomial(rescaled_probabilities[0][-1], num_samples=1)
-    
-    
+
     index = sorted_indices.tolist()[-1][-1][sampled_index.item()]
     
     return index

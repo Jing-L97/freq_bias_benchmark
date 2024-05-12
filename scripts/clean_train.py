@@ -19,13 +19,11 @@ def parseArgs(argv):
     parser.add_argument('--mat_path', type=str,
                         default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/train_mat/',
                         help='path to preprocessed files')
-
     parser.add_argument('--utt_path', type=str,
                         default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/train/train_utt/',
                         help='path to preprocessed files')
 
     return parser.parse_args(argv)
-
 
 
 # preprocess the data
@@ -35,7 +33,7 @@ def remove_blank(x):
 
 def get_len(x):
     try:
-        return len(x)    # Strip leading and trailing spaces if it's a string
+        return len(x)
     except:
         return 0
 
@@ -43,6 +41,20 @@ def count_words(sentence):
     # Split the sentence into words based on whitespace
     words = sentence.split()
     return len(words)
+
+def clean_txt(sent:str):
+    """clean the input string"""
+    # Filter out non-ASCII characters
+    sent = ''.join(char for char in sent if ord(char) < 128)
+    # remove punctuations
+    translator = str.maketrans('', '', string.punctuation + string.digits)
+    translator[ord('-')] = ' '  # Replace hyphen with blank space
+    clean_string = sent.translate(translator).lower()
+    clean_string = re.sub(r'\s+', ' ', clean_string)
+    clean_string = clean_string.strip()
+    return clean_string
+
+
 
 def preprocess(raw:list):
     '''
@@ -52,13 +64,9 @@ def preprocess(raw:list):
     raw = [line.strip() for line in raw if line.strip()]
     processed_without_all = []
     processed_with_all = []
+    sent_all = []
     for sent in tqdm(raw):
-        # remove punctuations
-        translator = str.maketrans('', '', string.punctuation + string.digits)
-        translator[ord('-')] = ' '  # Replace hyphen with blank space
-        clean_string = sent.translate(translator)
-        clean_string = re.sub(r'\s+', ' ', clean_string)
-        clean_string = clean_string.strip()
+        clean_string = clean_txt(sent)
         word_lst = clean_string.split(' ')
         # convert into corresponding format string
         processed_with = ''
@@ -70,27 +78,16 @@ def preprocess(raw:list):
                 processed_with += upper_char + " | "
                 processed_without += upper_char + " "
 
+        sent_all.append(clean_string)
         processed_without_all.append(processed_without)
         processed_with_all.append(processed_with)
     # convert the final results into
-    return processed_with_all, processed_without_all
+    return sent_all,processed_with_all, processed_without_all
 
-def clean_txt(raw:list):
-    """prepare for gen"""
-    raw = [line.strip() for line in raw if line.strip()]
-    sent_all = []
-    for sent in tqdm(raw):
-        # remove punctuations
-        translator = str.maketrans('', '', string.punctuation + string.digits)
-        translator[ord('-')] = ' '  # Replace hyphen with blank space
-        clean_string = sent.translate(translator).lower()
-        clean_string = re.sub(r'\s+', ' ', clean_string)
-        clean_string = clean_string.strip()
-        sent_all.append(clean_string)
-    return sent_all
 
-def get_utt_frame(raw:list,file:str,all_frame):
-    sent = clean_txt(raw)
+
+def get_utt_frame(sent:list,file:str,all_frame):
+    """save the cleaned utt as a dataframe"""
     utt_frame = pd.DataFrame(sent)
     utt_frame = utt_frame.rename(columns={0: 'train'})
     utt_frame['filename'] = file
@@ -122,8 +119,8 @@ def main(argv):
             for txt in file_lst[0]:
                 with open(dataset_path + txt, 'r') as f:
                     raw = f.readlines()
-                    all_frame = get_utt_frame(raw,txt,all_frame)
-                    processed_with, _ = preprocess(raw)
+                    sent_all,processed_with, _ = preprocess(raw)
+                    all_frame = get_utt_frame(sent_all,txt,all_frame)
                     train.extend(processed_with)
 
             # save the utt csv file
@@ -149,3 +146,4 @@ def main(argv):
 if __name__ == "__main__":
     args = sys.argv[1:]
     main(args)
+
