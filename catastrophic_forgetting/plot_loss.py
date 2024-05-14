@@ -37,13 +37,11 @@ def load_loss(log_file):
     return dict(sorted(train_losses.items())), dict(sorted(valid_losses.items()))
 
 # Path to the result.log file
-log_file = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/model/400.log'
+log_file = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/model/100_tra.log'
 fig_path = '/Users/jliu/PycharmProjects/freq_bias_benchmark/data/fig/loss/'
 # Read loss values from the log file
 train_losses, valid_losses = load_loss(log_file)
 
-
-plt.clf()
 hour = log_file.split('/')[-1].split('.')[0]
 # Plot train and validation loss curves
 plt.plot(list(train_losses.keys()),list(train_losses.values()), label='Train Loss')
@@ -55,3 +53,10 @@ plt.legend()
 plt.grid(True)
 plt.show()
 plt.savefig(fig_path + hour + '.png', dpi=800)
+plt.clf()
+
+
+
+
+
+

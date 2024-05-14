@@ -10,7 +10,7 @@ def parseArgs(argv):
     # Run parameters
     parser = argparse.ArgumentParser(description='Select test sets by freq')
 
-    parser.add_argument('--root_path', type=str, default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/batch/100_large/',
+    parser.add_argument('--root_path', type=str, default='/Users/jliu/PycharmProjects/freq_bias_benchmark/data/batch/1600_med/',
                         help='root path to the utterance and freq dir')
     return parser.parse_args(argv)
 
